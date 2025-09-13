@@ -1,0 +1,100 @@
+# Build directories
+build/
+cmake-build-*/
+bin/
+lib/
+install/
+
+# Compiled binaries
+lezi
+*.exe
+*.out
+*.app
+
+# Object files
+*.o
+*.obj
+*.lo
+*.slo
+
+# Static libraries
+*.a
+*.lib
+*.la
+
+# Shared libraries
+*.so
+*.dylib
+*.dll
+
+# CMake files
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Debug and profiling
+*.dSYM/
+*.pdb
+*.gch
+*.pch
+callgrind.out.*
+*.gcda
+*.gcno
+*.gcov
+
+# Package files
+*.tar.gz
+*.zip
+*.deb
+*.rpm
+*.dmg
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+core.*
+
+# OS specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Test results
+test_results/
+coverage/
+
+# Generated documentation
+docs/_build/
+docs/html/
+docs/latex/
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Local configuration
+.env
+local.properties
+
+# History files
+.lezi_history
+.bash_history
+.zsh_history
