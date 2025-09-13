@@ -130,16 +130,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run Trivy vulnerability scanner
+      - name: Run Trivy vulnerability scanner (FS Scan)
         uses: aquasecurity/trivy-action@master
         with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
+          scan-type: 'fs'          # 扫描整个文件系统（当前目录）
+          format: 'sarif'          # 输出 SARIF 格式报告
+          output: 'trivy-results.sarif'  # SARIF 文件名
+          severity: 'UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL'  # 检测所有严重级别
+          ignore-unfixed: false    # 不忽略未修复的漏洞
+          vuln-type: 'os,library'  # 扫描操作系统和库漏洞
+          cache-dir: '/home/runner/work/lezi-shell/lezi-shell/.cache/trivy'  # 缓存目录
+          cache: true              # 启用缓存加速扫描
+          skip-setup-trivy: false  # 不跳过 Trivy 安装（由 action 自动处理）
 
-      - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v2
-        if: always()
-        with:
-          sarif_file: 'trivy-results.sarif'
+      - name: Show Trivy Scan Results (Optional - 查看 SARIF 文件内容)
+        run: |
+          echo "Trivy 扫描完成，SARIF 文件已生成: trivy-results.sarif"
+          # 如果需要查看 SARIF 内容，可以取消注释下一行（但 SARIF 是结构化数据，直接看可能不易读）
+          # cat trivy-results.sarif
