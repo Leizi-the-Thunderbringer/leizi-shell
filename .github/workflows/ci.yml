@@ -147,4 +147,4 @@ jobs:
         run: |
           echo "Trivy 扫描完成，SARIF 文件已生成: trivy-results.sarif"
           # 如果需要查看 SARIF 内容，可以取消注释下一行（但 SARIF 是结构化数据，直接看可能不易读）
-          # cat trivy-results.sarif
+          cat trivy-results.sarif

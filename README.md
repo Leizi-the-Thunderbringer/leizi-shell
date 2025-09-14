@@ -26,7 +26,7 @@ A modern POSIX-compatible shell with ZSH-style arrays and beautiful Powerlevel10
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/lezi-shell.git
+git clone https://github.com/Leizi-the-Thunderbringer/lezi-shell.git
 cd lezi-shell
 
 # Create build directory
@@ -43,7 +43,7 @@ sudo make install
 ### Quick Install Script
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/your-username/lezi-shell/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/Leizi-the-Thunderbringer/lezi-shell/main/install.sh | bash
 ```
 
 ## 🚀 Usage
@@ -162,7 +162,7 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ```bash
 # Clone with submodules
-git clone --recursive https://github.com/your-username/lezi-shell.git
+git clone --recursive https://github.com/Leizi-the-Thunderbringer/lezi-shell.git
 
 # Set up development environment
 cd lezi-shell
@@ -214,12 +214,12 @@ Found a bug? Please [open an issue](https://github.com/your-username/lezi-shell/
 
 ## 📊 Statistics
 
-![GitHub stars](https://img.shields.io/github/stars/your-username/lezi-shell?style=social)
-![GitHub forks](https://img.shields.io/github/forks/your-username/lezi-shell?style=social)
-![GitHub issues](https://img.shields.io/github/issues/your-username/lezi-shell)
-![GitHub license](https://img.shields.io/github/license/your-username/lezi-shell)
-![Build status](https://img.shields.io/github/workflow/status/your-username/lezi-shell/CI)
+![GitHub stars](https://img.shields.io/github/stars/Leizi-the-Thunderbringer/lezi-shell?style=social)
+![GitHub forks](https://img.shields.io/github/forks/Leizi-the-Thunderbringer/lezi-shell?style=social)
+![GitHub issues](https://img.shields.io/github/issues/Leizi-the-Thunderbringer/lezi-shell)
+![GitHub license](https://img.shields.io/github/license/Leizi-the-Thunderbringer/lezi-shell)
+![Build status](https://img.shields.io/github/workflow/status/Leizi-the-Thunderbringer/lezi-shell/CI)
 
 ---
 
-**Made with ❤️ by the Lezi Shell team**
+**Made with ❤️ by the Leizi-the-Thunderbringer team**
