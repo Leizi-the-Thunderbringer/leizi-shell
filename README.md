@@ -184,7 +184,7 @@ make -j$(nproc)
 
 ## 📜 License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+GNU GENERAL PUBLIC LICENSE - see [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
