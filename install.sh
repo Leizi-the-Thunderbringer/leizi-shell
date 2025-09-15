@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Lezi Shell Installation Script
-# Usage: curl -sSL https://raw.githubusercontent.com/your-username/lezi-shell/main/install.sh | bash
+# Usage: curl -sSL https://raw.githubusercontent.com/Leizi-the-Thunderbringer/lezi-shell/main/install.sh | bash
 
 set -e
 
