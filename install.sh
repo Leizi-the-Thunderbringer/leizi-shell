@@ -15,7 +15,7 @@ BOLD='\033[1m'
 NC='\033[0m' # No Color
 
 # Configuration
-REPO_URL="https://github.com/your-username/lezi-shell"
+REPO_URL="https://github.com/Leizi-the-Thunderbringer/lezi-shell"
 BINARY_NAME="lezi"
 INSTALL_DIR="/usr/local/bin"
 VERSION="latest"
