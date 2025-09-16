@@ -779,7 +779,7 @@ private:
         std::cout << "Readline support: " << Color::YELLOW << "disabled" << Color::RESET << "\n";
         #endif
         std::cout << "Git integration: " << Color::GREEN << "enabled" << Color::RESET << "\n";
-        std::cout << "Repository: https://github.com/your-username/lezi-shell\n";
+        std::cout << "Repository: https://github.com/Leizi-the-Thunderbringer/lezi-shell\n";
         lastExitCode = 0;
     }
 
