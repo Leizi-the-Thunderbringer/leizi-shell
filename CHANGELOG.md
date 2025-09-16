@@ -24,4 +24,5 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 - showVersion function to correctly display version information and repository URL
+- Minor bug fixes and performance improvements
 
