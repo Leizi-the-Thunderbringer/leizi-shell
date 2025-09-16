@@ -37,7 +37,7 @@
 #define LEZI_VERSION_MAJOR 1
 #define LEZI_VERSION_MINOR 0
 #define LEZI_VERSION_PATCH 0
-#define LEZI_VERSION_STRING "1.0.0"
+#define LEZI_VERSION_STRING "1.0.1"
 
 // 检查是否有readline库
 #ifdef __has_include
