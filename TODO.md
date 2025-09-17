@@ -2,7 +2,7 @@
 
 ## 📋 项目概述
 - **项目名**: Lezi Shell (将重命名为 Leizi Shell)
-- **版本**: 当前 v1.0.0
+- **版本**: 当前 v1.0.1
 - **语言**: C++20
 - **构建系统**: CMake
 - **目标**: 现代化 POSIX 兼容的 shell，具有 ZSH 风格数组和美观提示符
@@ -21,7 +21,7 @@
   - `src/main.cpp` - 注释中的项目名
   - `.github/workflows/ci.yml` - 构建产物名称
 - **预期工作量**: 1-2 小时
-- **验收标准**: 
+- **验收标准**:
   - [ ] 所有文件中的项目名统一为 "leizi"
   - [ ] 可执行文件名为 "leizi"
   - [ ] README 中的命令示例更新
@@ -328,7 +328,7 @@ tests/
     └── command_perf.cpp
 ```
 
-- **测试框架选择**: 
+- **测试框架选择**:
   - 单元测试: Catch2 或 Google Test
   - 功能测试: BATS (Bash Automated Testing System)
   - 基准测试: Google Benchmark
@@ -417,12 +417,231 @@ docs/
   - [ ] Arch Linux - AUR 包
   - [ ] Docker 镜像
 
-- **自动化发布**:
-  - [ ] GitHub Actions 自动构建多平台二进制
-  - [ ] 自动创建 GitHub Release
-  - [ ] 包管理器仓库更新自动化
+- **具体任务**:
 
-- **预期工作量**: 1-2 天
+#### TASK-014a: Homebrew Formula (macOS)
+```ruby
+# Formula/lezi.rb
+class Lezi < Formula
+  desc "Modern POSIX-compatible shell with ZSH-style arrays and beautiful prompts"
+  homepage "https://github.com/Leizi-the-Thunderbringer/lezi-shell"
+  url "https://github.com/Leizi-the-Thunderbringer/lezi-shell/archive/v1.0.1.tar.gz"
+  sha256 "..."
+  license "GPL-3.0"
+  
+  depends_on "cmake" => :build
+  depends_on "readline"
+  
+  def install
+    system "cmake", "-S", ".", "-B", "build", *std_cmake_args
+    system "cmake", "--build", "build"
+    system "cmake", "--install", "build"
+  end
+  
+  test do
+    assert_match "Lezi Shell", shell_output("#{bin}/lezi --version")
+  end
+end
+```
+- [ ] 创建 Formula 文件
+- [ ] 测试本地安装: `brew install --build-from-source ./Formula/lezi.rb`
+- [ ] 提交到 homebrew-core 或创建自有 tap
+
+#### TASK-014b: APT Repository (Ubuntu/Debian)
+```bash
+# 创建 debian/ 目录结构
+debian/
+├── control          # 包依赖和描述
+├── changelog        # Debian 格式的变更日志
+├── copyright        # 版权信息
+├── rules           # 构建规则
+├── install         # 安装文件列表
+└── compat          # debhelper 兼容性级别
+```
+
+**debian/control 内容**:
+```
+Source: lezi-shell
+Section: shells
+Priority: optional
+Maintainer: Leizi Team <maintainer@example.com>
+Build-Depends: debhelper-compat (= 12), cmake, libreadline-dev
+Standards-Version: 4.5.0
+Homepage: https://github.com/Leizi-the-Thunderbringer/lezi-shell
+
+Package: lezi-shell
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libreadline8
+Description: Modern POSIX-compatible shell with beautiful prompts
+ Lezi Shell is a modern shell implementation featuring:
+  * Beautiful Powerlevel10k-inspired prompts
+  * Git integration with real-time status
+  * ZSH-style array support
+  * Smart tab completion
+  * POSIX compatibility
+```
+
+- [ ] 创建完整的 debian/ 目录
+- [ ] 配置 GitHub Actions 自动构建 .deb
+- [ ] 创建 PPA 或 APT 仓库
+- [ ] 测试安装: `sudo dpkg -i lezi-shell_1.0.1_amd64.deb`
+
+#### TASK-014c: AUR Package (Arch Linux)
+**PKGBUILD 文件**:
+```bash
+# Maintainer: Leizi Team <maintainer@example.com>
+pkgname=lezi-shell
+pkgver=1.0.1
+pkgrel=1
+pkgdesc="Modern POSIX-compatible shell with ZSH-style arrays and beautiful prompts"
+arch=('x86_64')
+url="https://github.com/Leizi-the-Thunderbringer/lezi-shell"
+license=('GPL3')
+depends=('readline')
+makedepends=('cmake' 'git')
+source=("$pkgname-$pkgver.tar.gz::https://github.com/Leizi-the-Thunderbringer/lezi-shell/archive/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+    cd "$pkgname-$pkgver"
+    cmake -B build -S . \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr
+    cmake --build build
+}
+
+package() {
+    cd "$pkgname-$pkgver"
+    DESTDIR="$pkgdir" cmake --install build
+    
+    # Install shell to /etc/shells
+    install -Dm644 /dev/stdin "$pkgdir/usr/share/libalpm/hooks/lezi-shell.hook" <<EOF
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Operation = Remove
+Type = Path
+Target = usr/bin/lezi
+
+[Action]
+Description = Updating shell database...
+When = PostTransaction
+Exec = /usr/bin/sh -c 'grep -qxF "/usr/bin/lezi" /etc/shells || echo "/usr/bin/lezi" >> /etc/shells'
+EOF
+}
+
+check() {
+    cd "$pkgname-$pkgver"
+    # Run basic tests
+    echo "version" | timeout 5 ./build/lezi || true
+}
+```
+
+**AUR 提交步骤**:
+- [ ] 创建 PKGBUILD 和 .SRCINFO
+- [ ] 本地测试: `makepkg -si`
+- [ ] 提交到 AUR: `git push aur@aur.archlinux.org:lezi-shell.git`
+
+#### TASK-014d: Docker 镜像
+**Dockerfile**:
+```dockerfile
+FROM ubuntu:22.04 as builder
+
+RUN apt-get update && apt-get install -y \
+    build-essential cmake libreadline-dev git \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+COPY . .
+RUN mkdir build && cd build && \
+    cmake -DCMAKE_BUILD_TYPE=Release .. && \
+    make -j$(nproc)
+
+FROM ubuntu:22.04
+RUN apt-get update && apt-get install -y \
+    libreadline8 git \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd -m -s /bin/bash lezi
+
+COPY --from=builder /src/build/lezi /usr/local/bin/
+RUN echo "/usr/local/bin/lezi" >> /etc/shells
+
+USER lezi
+WORKDIR /home/lezi
+ENTRYPOINT ["/usr/local/bin/lezi"]
+```
+
+- [ ] 创建多阶段 Dockerfile
+- [ ] GitHub Actions 自动构建并推送到 Docker Hub
+- [ ] 支持多架构 (amd64, arm64)
+- [ ] 测试: `docker run -it leizi/lezi-shell`
+
+- **自动化发布**:
+  - [ ] GitHub Actions 自动构建多平台二进制 ✅ (已有)
+  - [ ] 自动创建 GitHub Release ✅ (已有)
+  - [ ] Homebrew tap 自动更新
+  - [ ] APT 仓库自动更新
+  - [ ] AUR 包自动更新
+  - [ ] Docker 镜像自动构建和推送
+
+- **预期工作量**: 3-4 天 (每个平台约 1 天)
+
+### TASK-018: GitHub Actions 包管理集成
+- **描述**: 在现有 CI/CD 基础上添加包管理器自动发布
+- **当前状态**: ✅ GitHub Actions 已完善，Release 自动化已就绪
+- **扩展目标**: 在每次 Release 时自动更新各包管理器
+
+#### 具体实现:
+```yaml
+# .github/workflows/package-release.yml
+name: Package Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  update-homebrew:
+    runs-on: macos-latest
+    steps:
+      - name: Update Homebrew Formula
+        env:
+          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.BREW_TOKEN }}
+        run: |
+          # 自动更新 Formula 中的版本和校验和
+          # 提交 PR 到 homebrew-core 或自有 tap
+  
+  update-aur:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update AUR Package
+        env:
+          AUR_SSH_KEY: ${{ secrets.AUR_SSH_KEY }}
+        run: |
+          # 更新 PKGBUILD 中的版本
+          # 生成新的 .SRCINFO
+          # 推送到 AUR 仓库
+  
+  build-deb:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build and Upload DEB
+        run: |
+          # 构建 .deb 包
+          # 上传到 APT 仓库或 GitHub Release
+  
+  build-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v4
+        with:
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            leizi/lezi-shell:latest
+            leizi/lezi-shell:${{ github.event.release.tag_name }}
+```
 
 ---
 
@@ -495,10 +714,10 @@ docs/
 
 ### 开发工作流
 1. **分支策略**: 使用 Git Flow
-   - `main` - 稳定版本
-   - `develop` - 开发版本
-   - `feature/*` - 功能分支
-   - `hotfix/*` - 热修复分支
+  - `main` - 稳定版本
+  - `develop` - 开发版本
+  - `feature/*` - 功能分支
+  - `hotfix/*` - 热修复分支
 
 2. **代码审查**: 所有 PR 需要至少一人审查
 
@@ -540,6 +759,6 @@ docs/
 
 ---
 
-**最后更新**: 2025年9月16日
+**最后更新**: 2025年9月17日
 **维护者**: Leizi-the-Thunderbringer Team
 **版本**: v1.0 (待办清单)
