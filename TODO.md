@@ -1,7 +1,7 @@
-# 🚀 Lezi Shell 详细待办事项清单
+# 🚀 Leizi Shell 详细待办事项清单
 
 ## 📋 项目概述
-- **项目名**: Lezi Shell (将重命名为 Leizi Shell)
+- **项目名**: Leizi Shell
 - **版本**: 当前 v1.0.1
 - **语言**: C++20
 - **构建系统**: CMake
@@ -11,8 +11,9 @@
 
 ## 🚨 紧急修复 (Priority: CRITICAL)
 
-### TASK-001: 统一项目命名
-- **描述**: 将 "lezi" 统一重命名为 "leizi"
+### ~~TASK-001: 统一项目命名~~ ✅ **已完成**
+- **描述**: 将 "leizi" 统一重命名为 "leizi"
+- **状态**: ✅ 已完成 - 所有文件中的项目名已统一为 "leizi"
 - **影响文件**:
   - `CMakeLists.txt` - 项目名和可执行文件名
   - `README.md` - 所有提及项目名的地方
@@ -41,7 +42,7 @@
 ```
 src/
 ├── core/
-│   ├── shell.h/.cpp          # LeziShell 主类
+│   ├── shell.h/.cpp          # LeiziShell 主类
 │   ├── parser.h/.cpp         # CommandParser 类
 │   └── executor.h/.cpp       # CommandExecutor 类
 ├── builtin/
@@ -421,11 +422,11 @@ docs/
 
 #### TASK-014a: Homebrew Formula (macOS)
 ```ruby
-# Formula/lezi.rb
-class Lezi < Formula
+# Formula/leizi.rb
+class Leizi < Formula
   desc "Modern POSIX-compatible shell with ZSH-style arrays and beautiful prompts"
-  homepage "https://github.com/Leizi-the-Thunderbringer/lezi-shell"
-  url "https://github.com/Leizi-the-Thunderbringer/lezi-shell/archive/v1.0.1.tar.gz"
+  homepage "https://github.com/Leizi-the-Thunderbringer/leizi-shell"
+  url "https://github.com/Leizi-the-Thunderbringer/leizi-shell/archive/v1.0.1.tar.gz"
   sha256 "..."
   license "GPL-3.0"
   
@@ -439,12 +440,12 @@ class Lezi < Formula
   end
   
   test do
-    assert_match "Lezi Shell", shell_output("#{bin}/lezi --version")
+    assert_match "Leizi Shell", shell_output("#{bin}/leizi --version")
   end
 end
 ```
 - [ ] 创建 Formula 文件
-- [ ] 测试本地安装: `brew install --build-from-source ./Formula/lezi.rb`
+- [ ] 测试本地安装: `brew install --build-from-source ./Formula/leizi.rb`
 - [ ] 提交到 homebrew-core 或创建自有 tap
 
 #### TASK-014b: APT Repository (Ubuntu/Debian)
@@ -461,19 +462,19 @@ debian/
 
 **debian/control 内容**:
 ```
-Source: lezi-shell
+Source: leizi-shell
 Section: shells
 Priority: optional
 Maintainer: Leizi Team <maintainer@example.com>
 Build-Depends: debhelper-compat (= 12), cmake, libreadline-dev
 Standards-Version: 4.5.0
-Homepage: https://github.com/Leizi-the-Thunderbringer/lezi-shell
+Homepage: https://github.com/Leizi-the-Thunderbringer/leizi-shell
 
-Package: lezi-shell
+Package: leizi-shell
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, libreadline8
 Description: Modern POSIX-compatible shell with beautiful prompts
- Lezi Shell is a modern shell implementation featuring:
+ Leizi Shell is a modern shell implementation featuring:
   * Beautiful Powerlevel10k-inspired prompts
   * Git integration with real-time status
   * ZSH-style array support
@@ -484,22 +485,22 @@ Description: Modern POSIX-compatible shell with beautiful prompts
 - [ ] 创建完整的 debian/ 目录
 - [ ] 配置 GitHub Actions 自动构建 .deb
 - [ ] 创建 PPA 或 APT 仓库
-- [ ] 测试安装: `sudo dpkg -i lezi-shell_1.0.1_amd64.deb`
+- [ ] 测试安装: `sudo dpkg -i leizi-shell_1.0.1_amd64.deb`
 
 #### TASK-014c: AUR Package (Arch Linux)
 **PKGBUILD 文件**:
 ```bash
 # Maintainer: Leizi Team <maintainer@example.com>
-pkgname=lezi-shell
+pkgname=leizi-shell
 pkgver=1.0.1
 pkgrel=1
 pkgdesc="Modern POSIX-compatible shell with ZSH-style arrays and beautiful prompts"
 arch=('x86_64')
-url="https://github.com/Leizi-the-Thunderbringer/lezi-shell"
+url="https://github.com/Leizi-the-Thunderbringer/leizi-shell"
 license=('GPL3')
 depends=('readline')
 makedepends=('cmake' 'git')
-source=("$pkgname-$pkgver.tar.gz::https://github.com/Leizi-the-Thunderbringer/lezi-shell/archive/v$pkgver.tar.gz")
+source=("$pkgname-$pkgver.tar.gz::https://github.com/Leizi-the-Thunderbringer/leizi-shell/archive/v$pkgver.tar.gz")
 sha256sums=('SKIP')
 
 build() {
@@ -515,32 +516,32 @@ package() {
     DESTDIR="$pkgdir" cmake --install build
     
     # Install shell to /etc/shells
-    install -Dm644 /dev/stdin "$pkgdir/usr/share/libalpm/hooks/lezi-shell.hook" <<EOF
+    install -Dm644 /dev/stdin "$pkgdir/usr/share/libalpm/hooks/leizi-shell.hook" <<EOF
 [Trigger]
 Operation = Install
 Operation = Upgrade
 Operation = Remove
 Type = Path
-Target = usr/bin/lezi
+Target = usr/bin/leizi
 
 [Action]
 Description = Updating shell database...
 When = PostTransaction
-Exec = /usr/bin/sh -c 'grep -qxF "/usr/bin/lezi" /etc/shells || echo "/usr/bin/lezi" >> /etc/shells'
+Exec = /usr/bin/sh -c 'grep -qxF "/usr/bin/leizi" /etc/shells || echo "/usr/bin/leizi" >> /etc/shells'
 EOF
 }
 
 check() {
     cd "$pkgname-$pkgver"
     # Run basic tests
-    echo "version" | timeout 5 ./build/lezi || true
+    echo "version" | timeout 5 ./build/leizi || true
 }
 ```
 
 **AUR 提交步骤**:
 - [ ] 创建 PKGBUILD 和 .SRCINFO
 - [ ] 本地测试: `makepkg -si`
-- [ ] 提交到 AUR: `git push aur@aur.archlinux.org:lezi-shell.git`
+- [ ] 提交到 AUR: `git push aur@aur.archlinux.org:leizi-shell.git`
 
 #### TASK-014d: Docker 镜像
 **Dockerfile**:
@@ -561,20 +562,20 @@ FROM ubuntu:22.04
 RUN apt-get update && apt-get install -y \
     libreadline8 git \
     && rm -rf /var/lib/apt/lists/* \
-    && useradd -m -s /bin/bash lezi
+    && useradd -m -s /bin/bash leizi
 
-COPY --from=builder /src/build/lezi /usr/local/bin/
-RUN echo "/usr/local/bin/lezi" >> /etc/shells
+COPY --from=builder /src/build/leizi /usr/local/bin/
+RUN echo "/usr/local/bin/leizi" >> /etc/shells
 
-USER lezi
-WORKDIR /home/lezi
-ENTRYPOINT ["/usr/local/bin/lezi"]
+USER leizi
+WORKDIR /home/leizi
+ENTRYPOINT ["/usr/local/bin/leizi"]
 ```
 
 - [ ] 创建多阶段 Dockerfile
 - [ ] GitHub Actions 自动构建并推送到 Docker Hub
 - [ ] 支持多架构 (amd64, arm64)
-- [ ] 测试: `docker run -it leizi/lezi-shell`
+- [ ] 测试: `docker run -it leizi/leizi-shell`
 
 - **自动化发布**:
   - [ ] GitHub Actions 自动构建多平台二进制 ✅ (已有)
@@ -639,8 +640,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            leizi/lezi-shell:latest
-            leizi/lezi-shell:${{ github.event.release.tag_name }}
+            leizi/leizi-shell:latest
+            leizi/leizi-shell:${{ github.event.release.tag_name }}
 ```
 
 ---

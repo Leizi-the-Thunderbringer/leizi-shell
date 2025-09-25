@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Lezi Shell Installation Script
-# Usage: curl -sSL https://raw.githubusercontent.com/Leizi-the-Thunderbringer/lezi-shell/main/install.sh | bash
+# Leizi Shell Installation Script
+# Usage: curl -sSL https://raw.githubusercontent.com/Leizi-the-Thunderbringer/leizi-shell/main/install.sh | bash
 
 set -e
 
@@ -15,8 +15,8 @@ BOLD='\033[1m'
 NC='\033[0m' # No Color
 
 # Configuration
-REPO_URL="https://github.com/Leizi-the-Thunderbringer/lezi-shell"
-BINARY_NAME="lezi"
+REPO_URL="https://github.com/Leizi-the-Thunderbringer/leizi-shell"
+BINARY_NAME="leizi"
 INSTALL_DIR="/usr/local/bin"
 VERSION="latest"
 
@@ -142,7 +142,7 @@ install_build_deps() {
 # Download and install pre-built binary
 install_prebuilt() {
     local platform="$1"
-    local download_url="${REPO_URL}/releases/latest/download/lezi-${platform}.tar.gz"
+    local download_url="${REPO_URL}/releases/latest/download/leizi-${platform}.tar.gz"
     local temp_dir
 
     log "Attempting to download pre-built binary for ${platform}..."
@@ -151,27 +151,27 @@ install_prebuilt() {
     trap "rm -rf $temp_dir" EXIT
 
     # Download binary
-    if ! curl -fsSL "$download_url" -o "$temp_dir/lezi.tar.gz"; then
+    if ! curl -fsSL "$download_url" -o "$temp_dir/leizi.tar.gz"; then
         warning "Pre-built binary not available for ${platform}"
         return 1
     fi
 
     # Extract binary
     cd "$temp_dir"
-    tar -xzf lezi.tar.gz
+    tar -xzf leizi.tar.gz
 
     # Install binary
     if [ -w "$INSTALL_DIR" ]; then
-        cp lezi "$INSTALL_DIR/"
+        cp leizi "$INSTALL_DIR/"
     else
-        sudo cp lezi "$INSTALL_DIR/"
+        sudo cp leizi "$INSTALL_DIR/"
     fi
 
     # Make executable
-    if [ -w "$INSTALL_DIR/lezi" ]; then
-        chmod +x "$INSTALL_DIR/lezi"
+    if [ -w "$INSTALL_DIR/leizi" ]; then
+        chmod +x "$INSTALL_DIR/leizi"
     else
-        sudo chmod +x "$INSTALL_DIR/lezi"
+        sudo chmod +x "$INSTALL_DIR/leizi"
     fi
 
     success "Pre-built binary installed successfully!"
@@ -183,7 +183,7 @@ install_from_source() {
     local temp_dir
     local build_deps_installed=false
 
-    log "Building Lezi Shell from source..."
+    log "Building Leizi Shell from source..."
 
     # Check if we need to install build dependencies
     if ! check_dependencies >/dev/null 2>&1; then
@@ -202,8 +202,8 @@ install_from_source() {
     # Clone repository
     log "Cloning repository..."
     cd "$temp_dir"
-    git clone "$REPO_URL" lezi-shell
-    cd lezi-shell
+    git clone "$REPO_URL" leizi-shell
+    cd leizi-shell
 
     # Get latest release if requested
     if [ "$VERSION" = "latest" ]; then
@@ -244,11 +244,11 @@ add_to_shells() {
     fi
 
     if grep -q "$shell_path" /etc/shells; then
-        log "Lezi Shell already registered in /etc/shells"
+        log "Leizi Shell already registered in /etc/shells"
         return
     fi
 
-    log "Adding Lezi Shell to /etc/shells..."
+    log "Adding Leizi Shell to /etc/shells..."
     if [ -w "/etc/shells" ]; then
         echo "$shell_path" >> /etc/shells
     else
@@ -263,7 +263,7 @@ set_default_shell() {
     local shell_path="$INSTALL_DIR/$BINARY_NAME"
 
     echo
-    read -p "Set Lezi Shell as your default shell? [y/N] " -n 1 -r
+    read -p "Set Leizi Shell as your default shell? [y/N] " -n 1 -r
     echo
 
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
@@ -274,7 +274,7 @@ set_default_shell() {
         add_to_shells
     fi
 
-    log "Setting Lezi Shell as default shell..."
+    log "Setting Leizi Shell as default shell..."
     chsh -s "$shell_path"
     success "Default shell changed! Please log out and back in for changes to take effect."
 }
@@ -284,13 +284,13 @@ show_summary() {
     local shell_path="$INSTALL_DIR/$BINARY_NAME"
 
     echo
-    echo -e "${BOLD}${GREEN}🎉 Lezi Shell Installation Complete!${NC}"
+    echo -e "${BOLD}${GREEN}🎉 Leizi Shell Installation Complete!${NC}"
     echo
     echo "Installation location: $shell_path"
     echo "Version: $($shell_path --version 2>/dev/null || echo 'unknown')"
     echo
     echo -e "${BOLD}Next steps:${NC}"
-    echo "1. Run 'lezi' to start the shell"
+    echo "1. Run 'leizi' to start the shell"
     echo "2. Type 'help' for available commands"
     echo "3. Visit $REPO_URL for documentation"
     echo
@@ -306,7 +306,7 @@ show_summary() {
 
 # Main installation function
 main() {
-    echo -e "${BOLD}${CYAN}🚀 Lezi Shell Installer${NC}"
+    echo -e "${BOLD}${CYAN}🚀 Leizi Shell Installer${NC}"
     echo -e "Modern POSIX-compatible shell with beautiful prompts"
     echo
 

@@ -43,10 +43,10 @@ jobs:
       - name: Test basic functionality
         run: |
           cd ${{github.workspace}}/build
-          echo "version" | ./lezi || true
-          echo "help" | ./lezi || true
-          echo 'echo "Hello, Lezi!"' | ./lezi || true
-          echo "exit 0" | ./lezi
+          echo "version" | ./leizi || true
+          echo "help" | ./leizi || true
+          echo 'echo "Hello, Leizi!"' | ./leizi || true
+          echo "exit 0" | ./leizi
 
   build-release:
     name: Build Release Binaries
@@ -85,7 +85,7 @@ jobs:
       - name: Package
         run: |
           cd ${{github.workspace}}/install/bin
-          tar -czf ../../lezi-${{ matrix.platform }}.tar.gz lezi
+          tar -czf ../../leizi-${{ matrix.platform }}.tar.gz leizi
 
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
@@ -93,8 +93,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./lezi-${{ matrix.platform }}.tar.gz
-          asset_name: lezi-${{ matrix.platform }}.tar.gz
+          asset_path: ./leizi-${{ matrix.platform }}.tar.gz
+          asset_name: leizi-${{ matrix.platform }}.tar.gz
           asset_content_type: application/gzip
 
   code-quality:
@@ -139,7 +139,7 @@ jobs:
           severity: 'UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL'  # 检测所有严重级别
           ignore-unfixed: false    # 不忽略未修复的漏洞
           vuln-type: 'os,library'  # 扫描操作系统和库漏洞
-          cache-dir: '/home/runner/work/lezi-shell/lezi-shell/.cache/trivy'  # 缓存目录
+          cache-dir: '/home/runner/work/leizi-shell/leizi-shell/.cache/trivy'  # 缓存目录
           cache: true              # 启用缓存加速扫描
           skip-setup-trivy: false  # 不跳过 Trivy 安装（由 action 自动处理）
 

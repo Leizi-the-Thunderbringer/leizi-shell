@@ -1,6 +1,6 @@
-# Contributing to Lezi Shell
+# Contributing to Leizi Shell
 
-Thank you for your interest in contributing to Lezi Shell! We welcome contributions from everyone.
+Thank you for your interest in contributing to Leizi Shell! We welcome contributions from everyone.
 
 ## 🚀 Getting Started
 
@@ -8,8 +8,8 @@ Thank you for your interest in contributing to Lezi Shell! We welcome contributi
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/Leizi-the-Thunderbringer/lezi-shell.git
-   cd lezi-shell
+   git clone https://github.com/Leizi-the-Thunderbringer/leizi-shell.git
+   cd leizi-shell
    ```
 
 2. **Install dependencies**
@@ -95,7 +95,7 @@ When reporting bugs, please include:
 
 1. **Environment Information**
     - OS and version
-    - Lezi Shell version (`lezi --version`)
+    - Leizi Shell version (`leizi --version`)
     - Compiler version
     - CMake version
 
@@ -112,7 +112,7 @@ When reporting bugs, please include:
    make
    
    # Run with additional debugging (if applicable)
-   ./lezi --debug
+   ./leizi --debug
    ```
 
 ## ✨ Feature Requests
@@ -198,7 +198,7 @@ docs/
 
 ### Key Components
 
-1. **LeziShell Class**: Main shell controller
+1. **LeiziShell Class**: Main shell controller
 2. **Command Parser**: Tokenizes and parses user input
 3. **Variable System**: Manages shell and environment variables
 4. **Built-in Commands**: Internal command implementations
@@ -271,7 +271,7 @@ All submissions require code review:
 cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_PROFILING=ON ..
 
 # Profile with perf (Linux)
-perf record ./lezi
+perf record ./leizi
 perf report
 
 # Profile with Instruments (macOS)
@@ -296,4 +296,4 @@ Contributors will be recognized:
 - In release notes for significant contributions
 - Special recognition for major features
 
-Thank you for contributing to Lezi Shell! 🚀
+Thank you for contributing to Leizi Shell! 🚀

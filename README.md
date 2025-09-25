@@ -1,4 +1,4 @@
-# 🚀 Lezi Shell
+# 🚀 Leizi Shell
 
 A modern POSIX-compatible shell with ZSH-style arrays and beautiful Powerlevel10k-inspired prompts.
 
@@ -26,8 +26,8 @@ A modern POSIX-compatible shell with ZSH-style arrays and beautiful Powerlevel10
 
 ```bash
 # Clone the repository
-git clone https://github.com/Leizi-the-Thunderbringer/lezi-shell.git
-cd lezi-shell
+git clone https://github.com/Leizi-the-Thunderbringer/leizi-shell.git
+cd leizi-shell
 
 # Create build directory
 mkdir build && cd build
@@ -43,19 +43,19 @@ sudo make install
 ### Quick Install Script
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/Leizi-the-Thunderbringer/lezi-shell/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/Leizi-the-Thunderbringer/leizi-shell/main/install.sh | bash
 ```
 
 ## 🚀 Usage
 
-### Starting Lezi Shell
+### Starting Leizi Shell
 
 ```bash
 # Run directly
-./lezi
+./leizi
 
 # Or if installed system-wide
-lezi
+leizi
 ```
 
 ### Basic Commands
@@ -113,7 +113,7 @@ The prompt automatically detects git repositories and displays:
 
 ## 🎨 Prompt Customization
 
-Lezi Shell features a beautiful, informative prompt that shows:
+Leizi Shell features a beautiful, informative prompt that shows:
 
 ```
 user@hostname ~/project (main) ✓ [0] 14:30:25
@@ -130,7 +130,7 @@ user@hostname ~/project (main) ✓ [0] 14:30:25
 
 ## 📊 Performance
 
-Lezi Shell is designed for performance:
+Leizi Shell is designed for performance:
 
 - **Fast startup**: Minimal initialization overhead
 - **Efficient parsing**: Optimized command parsing
@@ -162,10 +162,10 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ```bash
 # Clone with submodules
-git clone --recursive https://github.com/Leizi-the-Thunderbringer/lezi-shell.git
+git clone --recursive https://github.com/Leizi-the-Thunderbringer/leizi-shell.git
 
 # Set up development environment
-cd lezi-shell
+cd leizi-shell
 ./scripts/setup-dev.sh
 
 # Build with debug symbols
@@ -205,20 +205,20 @@ GNU GENERAL PUBLIC LICENSE - see [LICENSE](LICENSE) file for details.
 
 ## 🐛 Bug Reports
 
-Found a bug? Please [open an issue](https://github.com/your-username/lezi-shell/issues) with:
+Found a bug? Please [open an issue](https://github.com/your-username/leizi-shell/issues) with:
 
 - Your OS and version
-- Lezi Shell version (`lezi --version`)
+- Leizi Shell version (`leizi --version`)
 - Steps to reproduce
 - Expected vs actual behavior
 
 ## 📊 Statistics
 
-![GitHub stars](https://img.shields.io/github/stars/Leizi-the-Thunderbringer/lezi-shell?style=social)
-![GitHub forks](https://img.shields.io/github/forks/Leizi-the-Thunderbringer/lezi-shell?style=social)
-![GitHub issues](https://img.shields.io/github/issues/Leizi-the-Thunderbringer/lezi-shell)
-![GitHub license](https://img.shields.io/github/license/Leizi-the-Thunderbringer/lezi-shell)
-![Build status](https://img.shields.io/github/workflow/status/Leizi-the-Thunderbringer/lezi-shell/CI)
+![GitHub stars](https://img.shields.io/github/stars/Leizi-the-Thunderbringer/leizi-shell?style=social)
+![GitHub forks](https://img.shields.io/github/forks/Leizi-the-Thunderbringer/leizi-shell?style=social)
+![GitHub issues](https://img.shields.io/github/issues/Leizi-the-Thunderbringer/leizi-shell)
+![GitHub license](https://img.shields.io/github/license/Leizi-the-Thunderbringer/leizi-shell)
+![Build status](https://img.shields.io/github/workflow/status/Leizi-the-Thunderbringer/leizi-shell/CI)
 
 ---
 

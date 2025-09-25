@@ -1,5 +1,5 @@
 /*
- * Lezi Shell - A modern POSIX-compatible shell with ZSH-style arrays and beautiful prompts
+ * Leizi Shell - A modern POSIX-compatible shell with ZSH-style arrays and beautiful prompts
  *
  * Features:
  * - POSIX compatibility with dash-like performance
@@ -11,7 +11,7 @@
  *
  * Author: logos
  * License: MIT
- * Repository: https://github.com/your-username/lezi-shell
+ * Repository: https://github.com/Leizi-the-Thunderbringer/leizi-shell
  */
 
 #include <iostream>
@@ -34,10 +34,10 @@
 #include <signal.h>
 
 // 版本信息
-#define LEZI_VERSION_MAJOR 1
-#define LEZI_VERSION_MINOR 0
-#define LEZI_VERSION_PATCH 0
-#define LEZI_VERSION_STRING "1.0.1"
+#define LEIZI_VERSION_MAJOR 1
+#define LEIZI_VERSION_MINOR 0
+#define LEIZI_VERSION_PATCH 0
+#define LEIZI_VERSION_STRING "1.0.1"
 
 // 检查是否有readline库
 #ifdef __has_include
@@ -141,7 +141,7 @@ static void signalHandler(int signal) {
     }
 }
 
-class LeziShell {
+class LeiziShell {
 private:
     std::unordered_map<std::string, Variable> variables;
     std::vector<std::string> commandHistory;
@@ -168,7 +168,7 @@ private:
 
     // 加载命令历史
     void loadHistory() {
-        historyFile = homeDirectory + "/.lezi_history";
+        historyFile = homeDirectory + "/.leizi_history";
         std::ifstream file(historyFile);
         std::string line;
 
@@ -583,7 +583,7 @@ private:
                 }
                 lastExitCode = 0;
             } else {
-                perror("lezi");
+                perror("leizi");
                 lastExitCode = 1;
             }
             return true;
@@ -732,7 +732,7 @@ private:
 
     // 显示帮助信息
     void showHelp() {
-        std::cout << Color::BOLD << Color::CYAN << "Lezi Shell " << LEZI_VERSION_STRING
+        std::cout << Color::BOLD << Color::CYAN << "Leizi Shell " << LEIZI_VERSION_STRING
                   << Color::RESET << " - A modern POSIX-compatible shell\n\n";
 
         std::cout << Color::BOLD << "Built-in Commands:" << Color::RESET << "\n";
@@ -769,7 +769,7 @@ private:
 
     // 显示版本信息
     void showVersion() {
-        std::cout << Color::BOLD << Color::CYAN << "Lezi Shell " << LEZI_VERSION_STRING
+        std::cout << Color::BOLD << Color::CYAN << "Leizi Shell " << LEIZI_VERSION_STRING
                   << Color::RESET << "\n";
         std::cout << "Built with C++20\n";
         std::cout << "Features: POSIX compatibility, ZSH arrays, beautiful prompts\n";
@@ -779,7 +779,7 @@ private:
         std::cout << "Readline support: " << Color::YELLOW << "disabled" << Color::RESET << "\n";
         #endif
         std::cout << "Git integration: " << Color::GREEN << "enabled" << Color::RESET << "\n";
-        std::cout << "Repository: https://github.com/Leizi-the-Thunderbringer/lezi-shell\n";
+        std::cout << "Repository: https://github.com/Leizi-the-Thunderbringer/leizi-shell\n";
         lastExitCode = 0;
     }
 
@@ -805,7 +805,7 @@ private:
             // 子进程
             signal(SIGINT, SIG_DFL);  // 恢复默认的SIGINT处理
             execvp(argv[0], argv.data());
-            std::cerr << "lezi: " << argv[0] << ": command not found" << std::endl;
+            std::cerr << "leizi: " << argv[0] << ": command not found" << std::endl;
             exit(127);
         } else if (pid > 0) {
             // 父进程
@@ -818,13 +818,13 @@ private:
                 lastExitCode = 128 + WTERMSIG(status);
             }
         } else {
-            perror("lezi: fork");
+            perror("leizi: fork");
             lastExitCode = 1;
         }
     }
 
 public:
-    LeziShell() {
+    LeiziShell() {
         // 设置信号处理
         signal(SIGINT, signalHandler);
 
@@ -845,8 +845,8 @@ public:
         // 设置默认变量
         variables["PWD"] = Variable(currentDirectory, true);
         variables["HOME"] = Variable(homeDirectory, true);
-        variables["SHELL"] = Variable("/usr/local/bin/lezi", true);
-        variables["LEZI_VERSION"] = Variable(LEZI_VERSION_STRING, true);
+        variables["SHELL"] = Variable("/usr/local/bin/leizi", true);
+        variables["LEIZI_VERSION"] = Variable(LEIZI_VERSION_STRING, true);
 
         // 加载历史记录
         loadHistory();
@@ -858,14 +858,14 @@ public:
         #endif
     }
 
-    ~LeziShell() {
+    ~LeiziShell() {
         saveHistory();
     }
 
     void run() {
         // 显示欢迎信息
-        std::cout << Color::BOLD << Color::CYAN << "🚀 Welcome to Lezi Shell "
-                  << LEZI_VERSION_STRING << Color::RESET << std::endl;
+        std::cout << Color::BOLD << Color::CYAN << "🚀 Welcome to Leizi Shell "
+                  << LEIZI_VERSION_STRING << Color::RESET << std::endl;
         std::cout << Color::DIM << "A modern POSIX-compatible shell with ZSH arrays and beautiful prompts"
                   << Color::RESET << std::endl;
         std::cout << Color::DIM << "Type 'help' for more information" << Color::RESET << std::endl << std::endl;
@@ -923,7 +923,7 @@ public:
             g_interrupted = false;
         }
 
-        std::cout << Color::CYAN << "Thanks for using Lezi Shell! 👋" << Color::RESET << std::endl;
+        std::cout << Color::CYAN << "Thanks for using Leizi Shell! 👋" << Color::RESET << std::endl;
     }
 
     int getExitCode() const {
@@ -936,10 +936,10 @@ int main(int argc, char* argv[]) {
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
         if (arg == "--version" || arg == "-v") {
-            std::cout << "Lezi Shell " << LEZI_VERSION_STRING << std::endl;
+            std::cout << "Leizi Shell " << LEIZI_VERSION_STRING << std::endl;
             return 0;
         } else if (arg == "--help" || arg == "-h") {
-            std::cout << "Usage: lezi [options]\n";
+            std::cout << "Usage: leizi [options]\n";
             std::cout << "Options:\n";
             std::cout << "  -h, --help     Show this help message\n";
             std::cout << "  -v, --version  Show version information\n";
@@ -948,11 +948,11 @@ int main(int argc, char* argv[]) {
     }
 
     try {
-        LeziShell shell;
+        LeiziShell shell;
         shell.run();
         return shell.getExitCode();
     } catch (const std::exception& e) {
-        std::cerr << "lezi: fatal error: " << e.what() << std::endl;
+        std::cerr << "leizi: fatal error: " << e.what() << std::endl;
         return 1;
     }
 }

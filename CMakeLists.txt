@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(lezi-shell VERSION 1.0.1 LANGUAGES CXX)
+project(leizi-shell VERSION 1.0.1 LANGUAGES CXX)
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 20)
@@ -53,34 +53,34 @@ else()
 endif()
 
 # Main executable
-add_executable(lezi src/main.cpp)
+add_executable(leizi src/main.cpp)
 
 # Set target properties
-set_target_properties(lezi PROPERTIES
+set_target_properties(leizi PROPERTIES
         CXX_STANDARD 20
         CXX_STANDARD_REQUIRED ON
 )
 
 # Link libraries
 if(HAVE_READLINE)
-    target_include_directories(lezi PRIVATE ${READLINE_INCLUDE_DIR})
-    target_link_libraries(lezi ${READLINE_LIBRARY})
+    target_include_directories(leizi PRIVATE ${READLINE_INCLUDE_DIR})
+    target_link_libraries(leizi ${READLINE_LIBRARY})
 
     # On some systems, we also need ncurses
     find_library(NCURSES_LIBRARY ncurses)
     if(NCURSES_LIBRARY)
-        target_link_libraries(lezi ${NCURSES_LIBRARY})
+        target_link_libraries(leizi ${NCURSES_LIBRARY})
     endif()
 endif()
 
 # Install targets
-install(TARGETS lezi
+install(TARGETS leizi
         RUNTIME DESTINATION bin
 )
 
 # Install man page (if exists)
-if(EXISTS ${CMAKE_SOURCE_DIR}/docs/lezi.1)
-    install(FILES docs/lezi.1
+if(EXISTS ${CMAKE_SOURCE_DIR}/docs/leizi.1)
+    install(FILES docs/leizi.1
             DESTINATION share/man/man1
     )
 endif()
@@ -94,10 +94,10 @@ if(EXISTS ${CMAKE_SOURCE_DIR}/tests)
 endif()
 
 # CPack configuration for packaging
-set(CPACK_PACKAGE_NAME "lezi-shell")
+set(CPACK_PACKAGE_NAME "leizi-shell")
 set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A modern POSIX-compatible shell")
-set(CPACK_PACKAGE_VENDOR "Lezi Shell Project")
+set(CPACK_PACKAGE_VENDOR "Leizi Shell Project")
 set(CPACK_PACKAGE_CONTACT "your-email@example.com")
 
 set(CPACK_SOURCE_GENERATOR "TGZ")
@@ -130,7 +130,7 @@ include(CPack)
 
 # Print configuration summary
 message(STATUS "")
-message(STATUS "Lezi Shell Configuration Summary:")
+message(STATUS "Leizi Shell Configuration Summary:")
 message(STATUS "  Version: ${PROJECT_VERSION}")
 message(STATUS "  Build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "  C++ standard: ${CMAKE_CXX_STANDARD}")
