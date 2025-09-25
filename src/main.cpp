@@ -32,6 +32,7 @@
 #include <chrono>
 #include <fstream>
 #include <signal.h>
+#include <fcntl.h>
 
 // 版本信息
 #define LEIZI_VERSION_MAJOR 1
@@ -467,10 +468,59 @@ private:
                 inQuotes = false;
             } else if (inSingleQuotes && c == '\'') {
                 inSingleQuotes = false;
-            } else if (!inQuotes && !inSingleQuotes && std::isspace(c)) {
-                if (!current.empty()) {
-                    tokens.push_back(current);
-                    current.clear();
+            } else if (!inQuotes && !inSingleQuotes) {
+                // 处理特殊字符（重定向和管道）
+                if (c == '|' || c == '>' || c == '<' || c == '&') {
+                    // 先保存当前token
+                    if (!current.empty()) {
+                        tokens.push_back(current);
+                        current.clear();
+                    }
+
+                    // 处理特殊符号
+                    if (c == '|') {
+                        tokens.push_back("|");
+                    } else if (c == '>') {
+                        // 检查是否是 >>
+                        if (i + 1 < input.length() && input[i + 1] == '>') {
+                            tokens.push_back(">>");
+                            ++i;
+                        } else {
+                            tokens.push_back(">");
+                        }
+                    } else if (c == '<') {
+                        tokens.push_back("<");
+                    } else if (c == '&') {
+                        // 检查是否是 &>
+                        if (i + 1 < input.length() && input[i + 1] == '>') {
+                            tokens.push_back("&>");
+                            ++i;
+                        } else {
+                            current += c;  // & 可能是其他用途
+                        }
+                    }
+                } else if (std::isdigit(c) && i + 1 < input.length() && input[i + 1] == '>') {
+                    // 处理 2> 和 2>>
+                    if (!current.empty()) {
+                        tokens.push_back(current);
+                        current.clear();
+                    }
+                    if (c == '2') {
+                        if (i + 2 < input.length() && input[i + 2] == '>') {
+                            tokens.push_back("2>>");
+                            i += 2;
+                        } else {
+                            tokens.push_back("2>");
+                            ++i;
+                        }
+                    }
+                } else if (std::isspace(c)) {
+                    if (!current.empty()) {
+                        tokens.push_back(current);
+                        current.clear();
+                    }
+                } else {
+                    current += c;
                 }
             } else {
                 current += c;
@@ -546,6 +596,52 @@ private:
         }
 
         return result;
+    }
+
+    // 执行内建命令（支持重定向的版本）
+    bool executeBuiltinWithRedirection(std::vector<std::string> args) {
+        if (args.empty()) return false;
+
+        const std::string& cmd = args[0];
+
+        // 这些命令必须在当前进程中执行
+        if (cmd == "cd" || cmd == "export" || cmd == "unset" || cmd == "array" || cmd == "exit") {
+            return executeBuiltin(args);
+        }
+
+        // 其他内建命令可以在子进程中执行以支持重定向
+        if (cmd == "echo" || cmd == "pwd" || cmd == "env" || cmd == "help" || cmd == "version" || cmd == "history") {
+            // 解析重定向
+            Redirection redir = parseRedirection(args);
+
+            // 如果有重定向，在子进程中执行
+            if (redir.type != Redirection::NONE) {
+                pid_t pid = fork();
+                if (pid == 0) {
+                    // 子进程
+                    signal(SIGINT, SIG_DFL);
+                    applyRedirection(redir);
+                    executeBuiltin(args);
+                    exit(lastExitCode);
+                } else if (pid > 0) {
+                    // 父进程
+                    int status;
+                    waitpid(pid, &status, 0);
+                    if (WIFEXITED(status)) {
+                        lastExitCode = WEXITSTATUS(status);
+                    }
+                } else {
+                    perror("fork");
+                    lastExitCode = 1;
+                }
+                return true;
+            } else {
+                // 没有重定向，直接执行
+                return executeBuiltin(args);
+            }
+        }
+
+        return false;
     }
 
     // 执行内建命令
@@ -783,6 +879,138 @@ private:
         lastExitCode = 0;
     }
 
+    // I/O 重定向结构
+    struct Redirection {
+        enum Type {
+            NONE = 0,
+            OUTPUT = 1,        // >
+            OUTPUT_APPEND = 2, // >>
+            INPUT = 3,         // <
+            ERROR = 4,         // 2>
+            ERROR_APPEND = 5,  // 2>>
+            BOTH = 6          // &>
+        };
+
+        Type type = NONE;
+        std::string filename;
+    };
+
+    // 解析重定向
+    Redirection parseRedirection(std::vector<std::string>& tokens) {
+        Redirection redir;
+
+        for (size_t i = 0; i < tokens.size(); ++i) {
+            const std::string& token = tokens[i];
+
+            if (token == ">" && i + 1 < tokens.size()) {
+                redir.type = Redirection::OUTPUT;
+                redir.filename = tokens[i + 1];
+                tokens.erase(tokens.begin() + i, tokens.begin() + i + 2);
+                break;
+            } else if (token == ">>" && i + 1 < tokens.size()) {
+                redir.type = Redirection::OUTPUT_APPEND;
+                redir.filename = tokens[i + 1];
+                tokens.erase(tokens.begin() + i, tokens.begin() + i + 2);
+                break;
+            } else if (token == "<" && i + 1 < tokens.size()) {
+                redir.type = Redirection::INPUT;
+                redir.filename = tokens[i + 1];
+                tokens.erase(tokens.begin() + i, tokens.begin() + i + 2);
+                break;
+            } else if (token == "2>" && i + 1 < tokens.size()) {
+                redir.type = Redirection::ERROR;
+                redir.filename = tokens[i + 1];
+                tokens.erase(tokens.begin() + i, tokens.begin() + i + 2);
+                break;
+            } else if (token == "2>>" && i + 1 < tokens.size()) {
+                redir.type = Redirection::ERROR_APPEND;
+                redir.filename = tokens[i + 1];
+                tokens.erase(tokens.begin() + i, tokens.begin() + i + 2);
+                break;
+            } else if (token == "&>" && i + 1 < tokens.size()) {
+                redir.type = Redirection::BOTH;
+                redir.filename = tokens[i + 1];
+                tokens.erase(tokens.begin() + i, tokens.begin() + i + 2);
+                break;
+            }
+        }
+
+        return redir;
+    }
+
+    // 应用重定向
+    void applyRedirection(const Redirection& redir) {
+        if (redir.type == Redirection::NONE) return;
+
+        std::string filename = expandVariables(redir.filename);
+
+        switch (redir.type) {
+            case Redirection::OUTPUT: {
+                int fd = open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+                if (fd < 0) {
+                    perror("open");
+                    exit(1);
+                }
+                dup2(fd, STDOUT_FILENO);
+                close(fd);
+                break;
+            }
+            case Redirection::OUTPUT_APPEND: {
+                int fd = open(filename.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644);
+                if (fd < 0) {
+                    perror("open");
+                    exit(1);
+                }
+                dup2(fd, STDOUT_FILENO);
+                close(fd);
+                break;
+            }
+            case Redirection::INPUT: {
+                int fd = open(filename.c_str(), O_RDONLY);
+                if (fd < 0) {
+                    perror("open");
+                    exit(1);
+                }
+                dup2(fd, STDIN_FILENO);
+                close(fd);
+                break;
+            }
+            case Redirection::ERROR: {
+                int fd = open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+                if (fd < 0) {
+                    perror("open");
+                    exit(1);
+                }
+                dup2(fd, STDERR_FILENO);
+                close(fd);
+                break;
+            }
+            case Redirection::ERROR_APPEND: {
+                int fd = open(filename.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644);
+                if (fd < 0) {
+                    perror("open");
+                    exit(1);
+                }
+                dup2(fd, STDERR_FILENO);
+                close(fd);
+                break;
+            }
+            case Redirection::BOTH: {
+                int fd = open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+                if (fd < 0) {
+                    perror("open");
+                    exit(1);
+                }
+                dup2(fd, STDOUT_FILENO);
+                dup2(fd, STDERR_FILENO);
+                close(fd);
+                break;
+            }
+            default:
+                break;
+        }
+    }
+
     // 解析管道命令
     std::vector<std::vector<std::string>> parsePipeline(const std::string& input) {
         std::vector<std::vector<std::string>> commands;
@@ -813,7 +1041,7 @@ private:
 
         // 如果只有一个命令，直接执行
         if (commands.size() == 1) {
-            if (!executeBuiltin(commands[0])) {
+            if (!executeBuiltinWithRedirection(commands[0])) {
                 executeExternal(commands[0]);
             }
             return;
@@ -840,6 +1068,10 @@ private:
                 // 子进程
                 signal(SIGINT, SIG_DFL);  // 恢复默认的SIGINT处理
 
+                // 解析重定向（复制命令以避免修改原始命令）
+                std::vector<std::string> cmdCopy = commands[i];
+                Redirection redir = parseRedirection(cmdCopy);
+
                 // 设置输入重定向
                 if (i > 0) {
                     dup2(pipes[i - 1].first, STDIN_FILENO);
@@ -856,9 +1088,12 @@ private:
                     close(pipes[j].second);
                 }
 
+                // 应用文件重定向（会覆盖管道重定向）
+                applyRedirection(redir);
+
                 // 展开变量并执行命令
                 std::vector<std::string> expandedArgs;
-                for (const auto& arg : commands[i]) {
+                for (const auto& arg : cmdCopy) {
                     expandedArgs.push_back(expandVariables(arg));
                 }
 
@@ -919,8 +1154,11 @@ private:
     }
 
     // 执行外部命令
-    void executeExternal(const std::vector<std::string>& args) {
+    void executeExternal(std::vector<std::string> args) {
         if (args.empty()) return;
+
+        // 解析重定向
+        Redirection redir = parseRedirection(args);
 
         // 展开所有参数中的变量
         std::vector<std::string> expandedArgs;
@@ -939,6 +1177,10 @@ private:
         if (pid == 0) {
             // 子进程
             signal(SIGINT, SIG_DFL);  // 恢复默认的SIGINT处理
+
+            // 应用重定向
+            applyRedirection(redir);
+
             execvp(argv[0], argv.data());
             std::cerr << "leizi: " << argv[0] << ": command not found" << std::endl;
             exit(127);
