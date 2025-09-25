@@ -783,6 +783,141 @@ private:
         lastExitCode = 0;
     }
 
+    // 解析管道命令
+    std::vector<std::vector<std::string>> parsePipeline(const std::string& input) {
+        std::vector<std::vector<std::string>> commands;
+        std::vector<std::string> currentCmd;
+        auto tokens = parseCommand(input);
+
+        for (const auto& token : tokens) {
+            if (token == "|") {
+                if (!currentCmd.empty()) {
+                    commands.push_back(currentCmd);
+                    currentCmd.clear();
+                }
+            } else {
+                currentCmd.push_back(token);
+            }
+        }
+
+        if (!currentCmd.empty()) {
+            commands.push_back(currentCmd);
+        }
+
+        return commands;
+    }
+
+    // 执行管道命令
+    void executePipeline(const std::vector<std::vector<std::string>>& commands) {
+        if (commands.empty()) return;
+
+        // 如果只有一个命令，直接执行
+        if (commands.size() == 1) {
+            if (!executeBuiltin(commands[0])) {
+                executeExternal(commands[0]);
+            }
+            return;
+        }
+
+        // 创建管道
+        std::vector<std::pair<int, int>> pipes(commands.size() - 1);
+        for (size_t i = 0; i < pipes.size(); ++i) {
+            int pipefd[2];
+            if (pipe(pipefd) == -1) {
+                perror("pipe");
+                lastExitCode = 1;
+                return;
+            }
+            pipes[i] = {pipefd[0], pipefd[1]};
+        }
+
+        // 执行每个命令
+        std::vector<pid_t> pids;
+        for (size_t i = 0; i < commands.size(); ++i) {
+            pid_t pid = fork();
+
+            if (pid == 0) {
+                // 子进程
+                signal(SIGINT, SIG_DFL);  // 恢复默认的SIGINT处理
+
+                // 设置输入重定向
+                if (i > 0) {
+                    dup2(pipes[i - 1].first, STDIN_FILENO);
+                }
+
+                // 设置输出重定向
+                if (i < commands.size() - 1) {
+                    dup2(pipes[i].second, STDOUT_FILENO);
+                }
+
+                // 关闭所有管道文件描述符
+                for (size_t j = 0; j < pipes.size(); ++j) {
+                    close(pipes[j].first);
+                    close(pipes[j].second);
+                }
+
+                // 展开变量并执行命令
+                std::vector<std::string> expandedArgs;
+                for (const auto& arg : commands[i]) {
+                    expandedArgs.push_back(expandVariables(arg));
+                }
+
+                std::vector<char*> argv;
+                for (const auto& arg : expandedArgs) {
+                    argv.push_back(const_cast<char*>(arg.c_str()));
+                }
+                argv.push_back(nullptr);
+
+                // 检查是否是内建命令
+                if (expandedArgs[0] == "cd" || expandedArgs[0] == "export" ||
+                    expandedArgs[0] == "unset" || expandedArgs[0] == "array") {
+                    // 内建命令不能在管道中使用
+                    std::cerr << "leizi: " << expandedArgs[0]
+                              << ": builtin command cannot be used in pipeline\n";
+                    exit(1);
+                }
+
+                execvp(argv[0], argv.data());
+                std::cerr << "leizi: " << argv[0] << ": command not found" << std::endl;
+                exit(127);
+
+            } else if (pid > 0) {
+                pids.push_back(pid);
+            } else {
+                perror("fork");
+                lastExitCode = 1;
+
+                // 关闭所有管道
+                for (size_t j = 0; j < pipes.size(); ++j) {
+                    close(pipes[j].first);
+                    close(pipes[j].second);
+                }
+                return;
+            }
+        }
+
+        // 父进程关闭所有管道
+        for (size_t i = 0; i < pipes.size(); ++i) {
+            close(pipes[i].first);
+            close(pipes[i].second);
+        }
+
+        // 等待所有子进程完成
+        for (pid_t pid : pids) {
+            int status;
+            waitpid(pid, &status, 0);
+
+            // 记录最后一个命令的退出状态
+            if (pid == pids.back()) {
+                if (WIFEXITED(status)) {
+                    lastExitCode = WEXITSTATUS(status);
+                } else if (WIFSIGNALED(status)) {
+                    lastExitCode = 128 + WTERMSIG(status);
+                }
+            }
+        }
+    }
+
     // 执行外部命令
     void executeExternal(const std::vector<std::string>& args) {
         if (args.empty()) return;
@@ -886,13 +1021,9 @@ public:
                 add_history(line);
                 commandHistory.push_back(input);
 
-                // 解析和执行命令
-                auto tokens = parseCommand(input);
-                if (!tokens.empty()) {
-                    if (!executeBuiltin(tokens)) {
-                        executeExternal(tokens);
-                    }
-                }
+                // 解析和执行命令（支持管道）
+                auto pipeline = parsePipeline(input);
+                executePipeline(pipeline);
             }
             free(line);
             #else
@@ -909,13 +1040,9 @@ public:
             if (!input.empty()) {
                 commandHistory.push_back(input);
 
-                // 解析和执行命令
-                auto tokens = parseCommand(input);
-                if (!tokens.empty()) {
-                    if (!executeBuiltin(tokens)) {
-                        executeExternal(tokens);
-                    }
-                }
+                // 解析和执行命令（支持管道）
+                auto pipeline = parsePipeline(input);
+                executePipeline(pipeline);
             }
             #endif
 
