@@ -36,9 +36,9 @@
 
 // 版本信息
 #define LEIZI_VERSION_MAJOR 1
-#define LEIZI_VERSION_MINOR 0
+#define LEIZI_VERSION_MINOR 1
 #define LEIZI_VERSION_PATCH 0
-#define LEIZI_VERSION_STRING "1.0.1"
+#define LEIZI_VERSION_STRING "1.1.0"
 
 // 检查是否有readline库
 #ifdef __has_include

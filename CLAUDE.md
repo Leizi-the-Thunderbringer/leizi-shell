@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Leizi Shell** is a modern POSIX-compatible shell written in C++20, featuring ZSH-style arrays and Powerlevel10k-inspired prompts. Currently version 1.0.1.
+**Leizi Shell** is a modern POSIX-compatible shell written in C++20, featuring ZSH-style arrays and Powerlevel10k-inspired prompts. Currently version 1.1.0.
 
 ## Build Commands
 
