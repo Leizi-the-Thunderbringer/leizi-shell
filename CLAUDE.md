@@ -6,6 +6,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Leizi Shell** is a modern POSIX-compatible shell written in C++20, featuring ZSH-style arrays and Powerlevel10k-inspired prompts. Currently version 1.1.0.
 
+## Recent Major Updates (v1.1.0 - 2025-09-25)
+
+### Implemented Features
+1. **Pipe Support** ✅
+   - Full command piping with `|` operator
+   - Multi-level pipes support (e.g., `cmd1 | cmd2 | cmd3`)
+   - Proper process synchronization and file descriptor management
+
+2. **I/O Redirection** ✅
+   - All major redirection operators: `>`, `>>`, `<`, `2>`, `2>>`, `&>`
+   - Works with both builtin and external commands
+   - Enhanced parser to correctly tokenize special operators
+
+3. **Project Rename** ✅
+   - Successfully renamed from "Lezi" to "Leizi" throughout codebase
+   - Binary is now `leizi`
+
 ## Build Commands
 
 ### Build for Development
@@ -174,3 +191,52 @@ perf report
 - Development happens on feature branches
 - CI/CD via GitHub Actions (builds for Linux, macOS, Windows)
 - Releases are automated through GitHub Actions
+- **IMPORTANT**: All commits must be GPG signed (`git commit -S`)
+- **Co-authorship**: Include `Co-Authored-By: HwlloChen <140884226+HwlloChen@users.noreply.github.com>` in release commits
+
+## Version History
+- v1.1.0 (2025-09-25): Pipe support, I/O redirection, project rename
+- v1.0.1 (2025-09-16): Bug fixes
+- v1.0.0 (2025-09-15): Initial release
+
+## Pending Major Tasks
+From TODO.md, the remaining high-priority tasks are:
+1. **TASK-003**: Complete modularization (partially started)
+2. **TASK-007**: Job control (`jobs`, `fg`, `bg`, `&`)
+3. **TASK-008**: Enhanced auto-completion
+4. **TASK-009**: Configuration system
+
+## Important Implementation Notes
+
+### Pipe Implementation (executePipeline function)
+- Creates pipes for inter-process communication
+- Properly manages file descriptors with dup2()
+- Handles process synchronization with waitpid()
+- Prevents builtin commands in pipes (they must run in main process)
+
+### I/O Redirection (parseRedirection/applyRedirection functions)
+- Parser tokenizes special operators separately
+- Redirection structure tracks type and filename
+- Built-in commands that output can fork for redirection support
+- File descriptors are properly managed with open() and dup2()
+
+### Current Code Structure
+- **Monolithic**: All code in `src/main.cpp` (~1300+ lines)
+- **Started modularization**:
+  - `src/utils/colors.h` - Color constants
+  - `src/utils/variables.h/cpp` - Improved variable system with std::variant
+- **Class structure**: Main `LeiziShell` class contains all functionality
+
+## Testing Commands
+```bash
+# Test pipes
+echo "hello world" | grep hello
+ls -la | grep main | wc -l
+
+# Test redirection
+echo "test" > file.txt
+echo "append" >> file.txt
+cat < file.txt
+ls nonexistent 2> error.txt
+command &> both.txt
+```
