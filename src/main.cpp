@@ -37,8 +37,8 @@
 // 版本信息
 #define LEIZI_VERSION_MAJOR 1
 #define LEIZI_VERSION_MINOR 1
-#define LEIZI_VERSION_PATCH 0
-#define LEIZI_VERSION_STRING "1.1.0"
+#define LEIZI_VERSION_PATCH 1
+#define LEIZI_VERSION_STRING "1.1.1"
 
 // 检查是否有readline库
 #ifdef __has_include
@@ -135,12 +135,41 @@ struct Variable {
 
 // 全局变量用于信号处理
 static bool g_interrupted = false;
+static pid_t g_foregroundPid = -1;
+
 static void signalHandler(int signal) {
     if (signal == SIGINT) {
         g_interrupted = true;
         std::cout << "\n";
+    } else if (signal == SIGTSTP) {
+        // Ctrl+Z - 暂停前台进程
+        if (g_foregroundPid > 0) {
+            kill(g_foregroundPid, SIGTSTP);
+        }
     }
 }
+
+// 作业状态枚举
+enum class JobStatus {
+    RUNNING,    // 正在运行
+    STOPPED,    // 已停止（Ctrl+Z）
+    DONE        // 已完成
+};
+
+// 作业信息结构
+struct Job {
+    int jobId;                      // 作业ID
+    pid_t pid;                       // 进程ID
+    std::string command;             // 命令字符串
+    JobStatus status;                // 作业状态
+    bool background;                 // 是否后台运行
+    std::chrono::system_clock::time_point startTime;  // 启动时间
+
+    Job(int id, pid_t p, const std::string& cmd, bool bg = false)
+        : jobId(id), pid(p), command(cmd),
+          status(JobStatus::RUNNING), background(bg),
+          startTime(std::chrono::system_clock::now()) {}
+};
 
 class LeiziShell {
 private:
@@ -151,6 +180,11 @@ private:
     int lastExitCode = 0;
     bool exitRequested = false;
     std::string historyFile;
+
+    // 作业控制相关
+    std::vector<Job> jobs;           // 作业列表
+    int nextJobId = 1;                // 下一个作业ID
+    pid_t foregroundPid = -1;        // 前台进程PID
 
     // 简单的输入读取函数（当没有readline时使用）
     std::string simpleReadline(const std::string& prompt) {
@@ -598,6 +632,165 @@ private:
         return result;
     }
 
+    // ==================== 作业控制相关方法 ====================
+
+    // 更新作业状态
+    void updateJobStatus() {
+        for (auto& job : jobs) {
+            if (job.status == JobStatus::RUNNING || job.status == JobStatus::STOPPED) {
+                int status;
+                pid_t result = waitpid(job.pid, &status, WNOHANG | WUNTRACED);
+
+                if (result > 0) {
+                    if (WIFEXITED(status) || WIFSIGNALED(status)) {
+                        job.status = JobStatus::DONE;
+                        if (job.background) {
+                            std::cout << "[" << job.jobId << "]+ Done\t\t"
+                                     << job.command << std::endl;
+                        }
+                    } else if (WIFSTOPPED(status)) {
+                        job.status = JobStatus::STOPPED;
+                        if (job.background) {
+                            std::cout << "[" << job.jobId << "]+ Stopped\t"
+                                     << job.command << std::endl;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 清理已完成的作业
+        jobs.erase(std::remove_if(jobs.begin(), jobs.end(),
+            [](const Job& job) { return job.status == JobStatus::DONE; }),
+            jobs.end());
+    }
+
+    // 列出所有作业
+    void listJobs() {
+        updateJobStatus();
+
+        if (jobs.empty()) {
+            std::cout << "No jobs running" << std::endl;
+            return;
+        }
+
+        for (const auto& job : jobs) {
+            std::string statusStr;
+            switch (job.status) {
+                case JobStatus::RUNNING:
+                    statusStr = "Running";
+                    break;
+                case JobStatus::STOPPED:
+                    statusStr = "Stopped";
+                    break;
+                case JobStatus::DONE:
+                    statusStr = "Done";
+                    break;
+            }
+
+            std::cout << "[" << job.jobId << "]"
+                     << (job.background ? "+" : "-") << "  "
+                     << statusStr << "\t\t"
+                     << job.command << std::endl;
+        }
+    }
+
+    // 将作业置于前台
+    bool foregroundJob(int jobId) {
+        updateJobStatus();
+
+        auto it = std::find_if(jobs.begin(), jobs.end(),
+            [jobId](const Job& job) { return job.jobId == jobId; });
+
+        if (it == jobs.end()) {
+            std::cerr << "leizi: fg: job " << jobId << " not found" << std::endl;
+            return false;
+        }
+
+        if (it->status == JobStatus::DONE) {
+            std::cerr << "leizi: fg: job has terminated" << std::endl;
+            jobs.erase(it);
+            return false;
+        }
+
+        // 如果作业被停止，恢复它
+        if (it->status == JobStatus::STOPPED) {
+            if (kill(it->pid, SIGCONT) < 0) {
+                perror("leizi: fg");
+                return false;
+            }
+            it->status = JobStatus::RUNNING;
+        }
+
+        // 将作业设为前台
+        it->background = false;
+        foregroundPid = it->pid;
+
+        // 等待作业完成
+        int status;
+        waitpid(it->pid, &status, WUNTRACED);
+
+        if (WIFEXITED(status) || WIFSIGNALED(status)) {
+            jobs.erase(it);
+            if (WIFEXITED(status)) {
+                lastExitCode = WEXITSTATUS(status);
+            } else {
+                lastExitCode = 128 + WTERMSIG(status);
+            }
+        } else if (WIFSTOPPED(status)) {
+            it->status = JobStatus::STOPPED;
+            std::cout << "[" << it->jobId << "]+ Stopped\t"
+                     << it->command << std::endl;
+        }
+
+        foregroundPid = -1;
+        return true;
+    }
+
+    // 将作业置于后台
+    bool backgroundJob(int jobId) {
+        updateJobStatus();
+
+        auto it = std::find_if(jobs.begin(), jobs.end(),
+            [jobId](const Job& job) { return job.jobId == jobId; });
+
+        if (it == jobs.end()) {
+            std::cerr << "leizi: bg: job " << jobId << " not found" << std::endl;
+            return false;
+        }
+
+        if (it->status != JobStatus::STOPPED) {
+            std::cerr << "leizi: bg: job already running" << std::endl;
+            return false;
+        }
+
+        // 恢复作业并置于后台
+        if (kill(it->pid, SIGCONT) < 0) {
+            perror("leizi: bg");
+            return false;
+        }
+
+        it->status = JobStatus::RUNNING;
+        it->background = true;
+
+        std::cout << "[" << it->jobId << "]+ " << it->command << " &" << std::endl;
+        return true;
+    }
+
+    // 添加新作业
+    int addJob(pid_t pid, const std::string& command, bool background) {
+        int jobId = nextJobId++;
+        jobs.emplace_back(jobId, pid, command, background);
+
+        if (background) {
+            std::cout << "[" << jobId << "] " << pid << std::endl;
+        }
+
+        return jobId;
+    }
+
+    // ==================== 内建命令处理 ====================
+
     // 执行内建命令（支持重定向的版本）
     bool executeBuiltinWithRedirection(std::vector<std::string> args) {
         if (args.empty()) return false;
@@ -815,6 +1008,81 @@ private:
             std::cout << "\033[2J\033[H";
             lastExitCode = 0;
             return true;
+        } else if (cmd == "jobs") {
+            // 显示作业列表
+            listJobs();
+            lastExitCode = 0;
+            return true;
+        } else if (cmd == "fg") {
+            // 将作业置于前台
+            int jobId = -1;
+            if (args.size() > 1) {
+                // 处理 %n 格式或直接的数字
+                std::string jobStr = args[1];
+                if (jobStr[0] == '%') {
+                    jobStr = jobStr.substr(1);
+                }
+                try {
+                    jobId = std::stoi(jobStr);
+                } catch (...) {
+                    std::cerr << "leizi: fg: invalid job specification" << std::endl;
+                    lastExitCode = 1;
+                    return true;
+                }
+            } else {
+                // 没有指定作业ID，使用最近的作业
+                updateJobStatus();
+                if (!jobs.empty()) {
+                    jobId = jobs.back().jobId;
+                } else {
+                    std::cerr << "leizi: fg: no current job" << std::endl;
+                    lastExitCode = 1;
+                    return true;
+                }
+            }
+
+            if (foregroundJob(jobId)) {
+                lastExitCode = 0;
+            } else {
+                lastExitCode = 1;
+            }
+            return true;
+        } else if (cmd == "bg") {
+            // 将作业置于后台
+            int jobId = -1;
+            if (args.size() > 1) {
+                // 处理 %n 格式或直接的数字
+                std::string jobStr = args[1];
+                if (jobStr[0] == '%') {
+                    jobStr = jobStr.substr(1);
+                }
+                try {
+                    jobId = std::stoi(jobStr);
+                } catch (...) {
+                    std::cerr << "leizi: bg: invalid job specification" << std::endl;
+                    lastExitCode = 1;
+                    return true;
+                }
+            } else {
+                // 没有指定作业ID，使用最近的停止作业
+                updateJobStatus();
+                auto it = std::find_if(jobs.rbegin(), jobs.rend(),
+                    [](const Job& job) { return job.status == JobStatus::STOPPED; });
+                if (it != jobs.rend()) {
+                    jobId = it->jobId;
+                } else {
+                    std::cerr << "leizi: bg: no stopped jobs" << std::endl;
+                    lastExitCode = 1;
+                    return true;
+                }
+            }
+
+            if (backgroundJob(jobId)) {
+                lastExitCode = 0;
+            } else {
+                lastExitCode = 1;
+            }
+            return true;
         } else if (cmd == "help") {
             showHelp();
             return true;
@@ -839,6 +1107,9 @@ private:
         std::cout << "  " << Color::GREEN << "unset var" << Color::RESET << "            Unset variable\n";
         std::cout << "  " << Color::GREEN << "array name=(v1 v2)" << Color::RESET << "   Create/display ZSH-style array\n";
         std::cout << "  " << Color::GREEN << "history [n]" << Color::RESET << "          Show command history\n";
+        std::cout << "  " << Color::GREEN << "jobs" << Color::RESET << "                 List background jobs\n";
+        std::cout << "  " << Color::GREEN << "fg [job]" << Color::RESET << "             Bring job to foreground\n";
+        std::cout << "  " << Color::GREEN << "bg [job]" << Color::RESET << "             Resume job in background\n";
         std::cout << "  " << Color::GREEN << "clear" << Color::RESET << "                Clear screen\n";
         std::cout << "  " << Color::GREEN << "help" << Color::RESET << "                 Show this help\n";
         std::cout << "  " << Color::GREEN << "version" << Color::RESET << "              Show version info\n";
@@ -1041,8 +1312,18 @@ private:
 
         // 如果只有一个命令，直接执行
         if (commands.size() == 1) {
-            if (!executeBuiltinWithRedirection(commands[0])) {
-                executeExternal(commands[0]);
+            std::vector<std::string> cmd = commands[0];
+
+            // 检查是否后台执行
+            bool background = false;
+            if (!cmd.empty() && cmd.back() == "&") {
+                background = true;
+                cmd.pop_back();  // 移除&符号
+                if (cmd.empty()) return;  // 只有&符号的情况
+            }
+
+            if (!executeBuiltinWithRedirection(cmd)) {
+                executeExternal(cmd, background);
             }
             return;
         }
@@ -1154,7 +1435,7 @@ private:
     }
 
     // 执行外部命令
-    void executeExternal(std::vector<std::string> args) {
+    void executeExternal(std::vector<std::string> args, bool background = false) {
         if (args.empty()) return;
 
         // 解析重定向
@@ -1177,6 +1458,12 @@ private:
         if (pid == 0) {
             // 子进程
             signal(SIGINT, SIG_DFL);  // 恢复默认的SIGINT处理
+            signal(SIGTSTP, SIG_DFL); // 恢复默认的SIGTSTP处理（Ctrl+Z）
+
+            // 如果是后台进程，忽略SIGINT
+            if (background) {
+                signal(SIGINT, SIG_IGN);
+            }
 
             // 应用重定向
             applyRedirection(redir);
@@ -1186,13 +1473,42 @@ private:
             exit(127);
         } else if (pid > 0) {
             // 父进程
-            int status;
-            waitpid(pid, &status, 0);
+            if (background) {
+                // 后台执行，添加到作业列表
+                std::string cmd = args[0];
+                for (size_t i = 1; i < args.size(); ++i) {
+                    cmd += " " + args[i];
+                }
+                addJob(pid, cmd, true);
+                lastExitCode = 0;
+            } else {
+                // 前台执行，等待进程完成
+                foregroundPid = pid;
+                g_foregroundPid = pid;  // 更新全局前台进程ID
+                int status;
+                waitpid(pid, &status, WUNTRACED);
+                foregroundPid = -1;
+                g_foregroundPid = -1;  // 清除全局前台进程ID
 
-            if (WIFEXITED(status)) {
-                lastExitCode = WEXITSTATUS(status);
-            } else if (WIFSIGNALED(status)) {
-                lastExitCode = 128 + WTERMSIG(status);
+                if (WIFEXITED(status)) {
+                    lastExitCode = WEXITSTATUS(status);
+                } else if (WIFSIGNALED(status)) {
+                    lastExitCode = 128 + WTERMSIG(status);
+                } else if (WIFSTOPPED(status)) {
+                    // 进程被停止（Ctrl+Z）
+                    std::string cmd = args[0];
+                    for (size_t i = 1; i < args.size(); ++i) {
+                        cmd += " " + args[i];
+                    }
+                    int jobId = addJob(pid, cmd, false);
+                    auto it = std::find_if(jobs.begin(), jobs.end(),
+                        [jobId](const Job& job) { return job.jobId == jobId; });
+                    if (it != jobs.end()) {
+                        it->status = JobStatus::STOPPED;
+                    }
+                    std::cout << "[" << jobId << "]+ Stopped\t" << cmd << std::endl;
+                    lastExitCode = 148; // 128 + SIGTSTP
+                }
             }
         } else {
             perror("leizi: fork");
@@ -1204,6 +1520,7 @@ public:
     LeiziShell() {
         // 设置信号处理
         signal(SIGINT, signalHandler);
+        signal(SIGTSTP, signalHandler);  // 添加Ctrl+Z处理
 
         // 初始化当前目录
         char* cwd = getcwd(nullptr, 0);
@@ -1250,6 +1567,8 @@ public:
         std::string input;
 
         while (!exitRequested) {
+            // 更新后台作业状态
+            updateJobStatus();
             #if HAVE_READLINE
             char* line = readline(generatePrompt().c_str());
             if (!line) {

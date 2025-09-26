@@ -4,9 +4,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Leizi Shell** is a modern POSIX-compatible shell written in C++20, featuring ZSH-style arrays and Powerlevel10k-inspired prompts. Currently version 1.1.0.
+**Leizi Shell** is a modern POSIX-compatible shell written in C++20, featuring ZSH-style arrays and Powerlevel10k-inspired prompts. Currently version 1.1.1 (in development).
 
-## Recent Major Updates (v1.1.0 - 2025-09-25)
+## Recent Major Updates (v1.1.1 - 2025-09-26)
+
+### Implemented Features
+1. **Job Control System** ✅ (NEW)
+   - Background execution with `&` operator
+   - Job management commands: `jobs`, `fg`, `bg`
+   - Process suspension with Ctrl+Z (SIGTSTP)
+   - Job status tracking (Running, Stopped, Done)
+   - Automatic job cleanup and status updates
+
+## Previous Updates (v1.1.0 - 2025-09-25)
 
 ### Implemented Features
 1. **Pipe Support** ✅
@@ -239,4 +249,11 @@ echo "append" >> file.txt
 cat < file.txt
 ls nonexistent 2> error.txt
 command &> both.txt
+
+# Test job control (NEW in v1.1.1)
+sleep 30 &           # 后台执行
+jobs                 # 查看作业列表
+sleep 10            # 运行后按Ctrl+Z暂停
+fg %1               # 将作业1置于前台
+bg %1               # 将作业1置于后台继续
 ```

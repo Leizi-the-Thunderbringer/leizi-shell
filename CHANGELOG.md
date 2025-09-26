@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.1] - 2025-09-26
+
+### Added
+- **Job Control System**: Complete implementation of job management features
+  - Background execution with `&` operator
+  - `jobs` command to list all active jobs
+  - `fg [job]` command to bring jobs to foreground
+  - `bg [job]` command to resume stopped jobs in background
+  - Ctrl+Z (SIGTSTP) support for suspending foreground processes
+  - Automatic job status tracking (Running, Stopped, Done)
+  - Job cleanup after completion
+
+### Changed
+- **GitHub Actions**: Updated workflow files to use custom API endpoint
+  - Added `ANTHROPIC_BASE_URL` environment variable for claude.yml
+  - Added `ANTHROPIC_BASE_URL` environment variable for claude-code-review.yml
+
+### Technical Improvements
+- Enhanced signal handling to support SIGTSTP
+- Improved process management with foreground/background distinction
+- Added global foreground PID tracking for signal routing
+- Updated version to 1.1.1
+
 ## [1.1.0] - 2025-09-25
 
 ### Added
@@ -14,7 +37,7 @@ All notable changes to this project will be documented in this file.
   - `>` - Output redirection (overwrite)
   - `>>` - Output append
   - `<` - Input redirection
-  - `2>` - Error redirection
+- `2>` - Error redirection
   - `2>>` - Error append
   - `&>` - Redirect both stdout and stderr
   - Works with both builtin and external commands
