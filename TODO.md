@@ -71,7 +71,7 @@ src/
   - [ ] 创建 `src/prompt/git.h/.cpp` - 提取 Git 集成功能
   - [ ] 创建 `src/core/parser.h/.cpp` - 提取命令解析逻辑
   - [ ] 创建 `src/builtin/` 目录下的各个命令实现
-  - [ ] 更新 `CMakeLists.txt` 支持多文件编译
+  - [x] 更新 `CMakeLists.txt` 支持多文件编译（添加 utils 源文件，2025-10-01）
   - [ ] 确保所有模块都有适当的头文件保护和命名空间
 
 - **预期工作量**: 2-3 天
