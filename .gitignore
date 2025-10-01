@@ -99,3 +99,5 @@ local.properties
 .bash_history
 .zsh_history
 gitlog.txt
+.env
+.mcp.json
