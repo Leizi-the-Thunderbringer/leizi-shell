@@ -57,6 +57,7 @@ add_executable(leizi
         src/main.cpp
         src/utils/variables.cpp
         src/prompt/prompt.cpp
+        src/core/parser.cpp
 )
 
 target_include_directories(leizi

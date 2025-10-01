@@ -64,6 +64,7 @@
 #include "utils/colors.h"
 #include "utils/variables.h"
 #include "prompt/prompt.h"
+#include "core/parser.h"
 
 // 全局变量用于信号处理
 static bool g_interrupted = false;
@@ -107,6 +108,7 @@ class LeiziShell {
 private:
     VariableManager variables;
     PromptGenerator promptGenerator;
+    CommandParser commandParser;
     std::vector<std::string> commandHistory;
     std::string currentDirectory;
     std::string homeDirectory;
@@ -173,7 +175,7 @@ private:
         std::vector<std::string> completions;
 
         // 分析输入
-        auto tokens = parseCommand(input);
+        auto tokens = commandParser.parseCommand(input);
         if (tokens.empty()) return completions;
 
         std::string lastToken = tokens.back();
@@ -266,102 +268,6 @@ private:
         completions.erase(std::unique(completions.begin(), completions.end()), completions.end());
 
         return completions;
-    }
-
-    // 解析命令行
-    std::vector<std::string> parseCommand(const std::string& input) const {
-        std::vector<std::string> tokens;
-        std::string current;
-        bool inQuotes = false;
-        bool inSingleQuotes = false;
-        bool escaped = false;
-
-        for (size_t i = 0; i < input.length(); ++i) {
-            char c = input[i];
-
-            if (escaped) {
-                current += c;
-                escaped = false;
-                continue;
-            }
-
-            if (c == '\\' && !inSingleQuotes) {
-                escaped = true;
-                continue;
-            }
-
-            if (!inQuotes && !inSingleQuotes && c == '"') {
-                inQuotes = true;
-            } else if (!inQuotes && !inSingleQuotes && c == '\'') {
-                inSingleQuotes = true;
-            } else if (inQuotes && c == '"') {
-                inQuotes = false;
-            } else if (inSingleQuotes && c == '\'') {
-                inSingleQuotes = false;
-            } else if (!inQuotes && !inSingleQuotes) {
-                // 处理特殊字符（重定向和管道）
-                if (c == '|' || c == '>' || c == '<' || c == '&') {
-                    // 先保存当前token
-                    if (!current.empty()) {
-                        tokens.push_back(current);
-                        current.clear();
-                    }
-
-                    // 处理特殊符号
-                    if (c == '|') {
-                        tokens.push_back("|");
-                    } else if (c == '>') {
-                        // 检查是否是 >>
-                        if (i + 1 < input.length() && input[i + 1] == '>') {
-                            tokens.push_back(">>");
-                            ++i;
-                        } else {
-                            tokens.push_back(">");
-                        }
-                    } else if (c == '<') {
-                        tokens.push_back("<");
-                    } else if (c == '&') {
-                        // 检查是否是 &>
-                        if (i + 1 < input.length() && input[i + 1] == '>') {
-                            tokens.push_back("&>");
-                            ++i;
-                        } else {
-                            current += c;  // & 可能是其他用途
-                        }
-                    }
-                } else if (std::isdigit(c) && i + 1 < input.length() && input[i + 1] == '>') {
-                    // 处理 2> 和 2>>
-                    if (!current.empty()) {
-                        tokens.push_back(current);
-                        current.clear();
-                    }
-                    if (c == '2') {
-                        if (i + 2 < input.length() && input[i + 2] == '>') {
-                            tokens.push_back("2>>");
-                            i += 2;
-                        } else {
-                            tokens.push_back("2>");
-                            ++i;
-                        }
-                    }
-                } else if (std::isspace(c)) {
-                    if (!current.empty()) {
-                        tokens.push_back(current);
-                        current.clear();
-                    }
-                } else {
-                    current += c;
-                }
-            } else {
-                current += c;
-            }
-        }
-
-        if (!current.empty()) {
-            tokens.push_back(current);
-        }
-
-        return tokens;
     }
 
     // 变量展开
@@ -703,7 +609,7 @@ private:
 
                 if (values.front() == '(' && values.back() == ')') {
                     values = values.substr(1, values.length() - 2);
-                    std::vector<std::string> arrayValues = parseCommand(values);
+                    std::vector<std::string> arrayValues = commandParser.parseCommand(values);
 
                     for (auto& val : arrayValues) {
                         val = expandVariables(val);
@@ -1034,30 +940,6 @@ private:
         }
     }
 
-    // 解析管道命令
-    std::vector<std::vector<std::string>> parsePipeline(const std::string& input) {
-        std::vector<std::vector<std::string>> commands;
-        std::vector<std::string> currentCmd;
-        auto tokens = parseCommand(input);
-
-        for (const auto& token : tokens) {
-            if (token == "|") {
-                if (!currentCmd.empty()) {
-                    commands.push_back(currentCmd);
-                    currentCmd.clear();
-                }
-            } else {
-                currentCmd.push_back(token);
-            }
-        }
-
-        if (!currentCmd.empty()) {
-            commands.push_back(currentCmd);
-        }
-
-        return commands;
-    }
-
     // 执行管道命令
     void executePipeline(const std::vector<std::vector<std::string>>& commands) {
         if (commands.empty()) return;
@@ -1335,7 +1217,7 @@ public:
                 commandHistory.push_back(input);
 
                 // 解析和执行命令（支持管道）
-                auto pipeline = parsePipeline(input);
+                auto pipeline = commandParser.parsePipeline(input);
                 executePipeline(pipeline);
             }
             free(line);
@@ -1354,7 +1236,7 @@ public:
                 commandHistory.push_back(input);
 
                 // 解析和执行命令（支持管道）
-                auto pipeline = parsePipeline(input);
+                auto pipeline = commandParser.parsePipeline(input);
                 executePipeline(pipeline);
             }
             #endif
