@@ -63,6 +63,7 @@
 
 #include "utils/colors.h"
 #include "utils/variables.h"
+#include "prompt/prompt.h"
 
 // 全局变量用于信号处理
 static bool g_interrupted = false;
@@ -105,6 +106,7 @@ struct Job {
 class LeiziShell {
 private:
     VariableManager variables;
+    PromptGenerator promptGenerator;
     std::vector<std::string> commandHistory;
     std::string currentDirectory;
     std::string homeDirectory;
@@ -158,149 +160,12 @@ private:
         }
     }
 
-    // Git状态检测
-    bool isGitRepository() const {
-        struct stat buffer;
-        return (stat(".git", &buffer) == 0) ||
-               (getenv("GIT_DIR") != nullptr);
-    }
-
-    std::string getGitBranch() const {
-        if (!isGitRepository()) return "";
-
-        FILE* pipe = popen("git symbolic-ref --short HEAD 2>/dev/null || git describe --tags --exact-match 2>/dev/null || git rev-parse --short HEAD 2>/dev/null", "r");
-        if (!pipe) return "";
-
-        char buffer[128];
-        std::string result;
-        if (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
-            result = buffer;
-            if (!result.empty() && result.back() == '\n') {
-                result.pop_back();
-            }
-        }
-        pclose(pipe);
-        return result.length() > 20 ? result.substr(0, 20) + "..." : result;
-    }
-
-    std::string getGitStatus() const {
-        if (!isGitRepository()) return "";
-
-        FILE* pipe = popen("git status --porcelain 2>/dev/null", "r");
-        if (!pipe) return "";
-
-        char buffer[1024];
-        std::string output;
-        while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
-            output += buffer;
-        }
-        pclose(pipe);
-
-        if (output.empty()) {
-            return Color::GREEN + "✓" + Color::RESET;
-        }
-
-        // 分析git状态
-        int modified = 0, added = 0, deleted = 0, untracked = 0;
-        std::istringstream iss(output);
-        std::string line;
-
-        while (std::getline(iss, line)) {
-            if (line.length() >= 2) {
-                char x = line[0], y = line[1];
-                if (x == '?' && y == '?') untracked++;
-                else if (x == 'A' || y == 'A') added++;
-                else if (x == 'D' || y == 'D') deleted++;
-                else if (x == 'M' || y == 'M') modified++;
-            }
-        }
-
-        std::string status;
-        if (modified > 0) status += Color::YELLOW + "●" + std::to_string(modified) + Color::RESET;
-        if (added > 0) status += Color::GREEN + "+" + std::to_string(added) + Color::RESET;
-        if (deleted > 0) status += Color::RED + "-" + std::to_string(deleted) + Color::RESET;
-        if (untracked > 0) status += Color::BRIGHT_BLUE + "?" + std::to_string(untracked) + Color::RESET;
-
-        return status.empty() ? Color::GREEN + "✓" + Color::RESET : status;
-    }
-
-    // 获取当前工作目录的简化显示
-    std::string getDisplayPath() const {
-        std::string displayPath = currentDirectory;
-
-        // 替换家目录为~
-        if (!homeDirectory.empty() && currentDirectory.find(homeDirectory) == 0) {
-            if (currentDirectory == homeDirectory) {
-                displayPath = "~";
-            } else {
-                displayPath = "~" + currentDirectory.substr(homeDirectory.length());
-            }
-        }
-
-        // 如果路径太长，进行截断
-        if (displayPath.length() > 40) {
-            size_t pos = displayPath.find_last_of('/');
-            if (pos != std::string::npos && pos > 3) {
-                displayPath = "..." + displayPath.substr(pos);
-            }
-        }
-
-        return displayPath;
-    }
-
-    // 美观的提示符 (Powerlevel10k风格)
     std::string generatePrompt() const {
-        std::stringstream prompt;
-
-        // 第一行：用户信息和路径
-        char hostname[256];
-        gethostname(hostname, sizeof(hostname));
-        struct passwd* pw = getpwuid(getuid());
-        std::string username = pw ? pw->pw_name : "user";
-
-        // 用户名@主机名
-        bool isRoot = (getuid() == 0);
-        prompt << (isRoot ? Color::BRIGHT_RED : Color::BRIGHT_CYAN) << Color::BOLD
-               << username << Color::RESET
-               << Color::BRIGHT_WHITE << "@" << Color::RESET
-               << Color::BRIGHT_GREEN << Color::BOLD << hostname << Color::RESET;
-
-        // 当前目录
-        prompt << " " << Color::BRIGHT_BLUE << Color::BOLD
-               << getDisplayPath() << Color::RESET;
-
-        // Git信息
-        std::string gitBranch = getGitBranch();
-        if (!gitBranch.empty()) {
-            prompt << " " << Color::BRIGHT_MAGENTA << "(" << gitBranch << ")" << Color::RESET;
-            std::string gitStatus = getGitStatus();
-            if (!gitStatus.empty()) {
-                prompt << " " << gitStatus;
-            }
-        }
-
-        // 退出码指示器
-        if (lastExitCode != 0) {
-            prompt << " " << Color::BRIGHT_RED << "[" << lastExitCode << "]" << Color::RESET;
-        }
-
-        // 时间戳
-        auto now = std::chrono::system_clock::now();
-        auto time_t = std::chrono::system_clock::to_time_t(now);
-        auto tm = *std::localtime(&time_t);
-        char timeStr[32];
-        std::strftime(timeStr, sizeof(timeStr), "%H:%M:%S", &tm);
-        prompt << " " << Color::DIM << timeStr << Color::RESET;
-
-        // 第二行：提示符
-        prompt << "\n";
-        if (isRoot) {
-            prompt << Color::BRIGHT_RED << "# " << Color::RESET;
-        } else {
-            prompt << Color::BRIGHT_GREEN << "❯ " << Color::RESET;
-        }
-
-        return prompt.str();
+        PromptContext context;
+        context.currentDirectory = currentDirectory;
+        context.homeDirectory = homeDirectory;
+        context.lastExitCode = lastExitCode;
+        return promptGenerator.generate(context);
     }
 
     // 自动补全功能

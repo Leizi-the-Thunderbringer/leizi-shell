@@ -56,6 +56,7 @@ endif()
 add_executable(leizi
         src/main.cpp
         src/utils/variables.cpp
+        src/prompt/prompt.cpp
 )
 
 target_include_directories(leizi
