@@ -52,6 +52,7 @@
   └── utils/      # 工具和信号处理
   ```
   - [x] 颜色常量抽离至 `src/utils/colors.h`（2025-10-01）
+  - [x] 引入 `VariableManager`（`src/utils/variables.*`）统一变量管理（2025-10-01）
 
 - **TASK-011: 完善测试套件** ⭐ `HIGH`
   - 建立单元测试框架 (Catch2/Google Test)

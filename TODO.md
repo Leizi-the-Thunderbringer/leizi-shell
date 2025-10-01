@@ -66,7 +66,7 @@ src/
 
 - **具体任务**:
   - [x] 创建 `src/utils/colors.h` - 将 Color 命名空间提取（2025-10-01 完成）
-  - [ ] 创建 `src/utils/variables.h/.cpp` - 实现改进的变量系统
+  - [x] 创建 `src/utils/variables.h/.cpp` - 实现改进的变量系统（引入 VariableManager，2025-10-01 完成初版）
   - [ ] 创建 `src/prompt/prompt.h/.cpp` - 提取提示符生成逻辑
   - [ ] 创建 `src/prompt/git.h/.cpp` - 提取 Git 集成功能
   - [ ] 创建 `src/core/parser.h/.cpp` - 提取命令解析逻辑
