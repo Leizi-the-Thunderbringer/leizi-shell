@@ -53,7 +53,15 @@ else()
 endif()
 
 # Main executable
-add_executable(leizi src/main.cpp)
+add_executable(leizi
+        src/main.cpp
+        src/utils/variables.cpp
+)
+
+target_include_directories(leizi
+        PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
 
 # Set target properties
 set_target_properties(leizi PROPERTIES

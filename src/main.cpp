@@ -31,6 +31,7 @@
 #include <dirent.h>
 #include <chrono>
 #include <fstream>
+#include <optional>
 #include <signal.h>
 #include <fcntl.h>
 
@@ -61,40 +62,7 @@
 #endif
 
 #include "utils/colors.h"
-
-// Shell变量类型
-enum class VarType {
-    STRING,
-    ARRAY,
-    INTEGER,
-    READONLY
-};
-
-// 变量值结构
-struct Variable {
-    VarType type;
-    std::string stringValue;
-    std::vector<std::string> arrayValue;
-    int intValue;
-    bool isReadonly;
-
-    Variable() : type(VarType::STRING), intValue(0), isReadonly(false) {}
-    explicit Variable(const std::string& str, bool readonly = false)
-        : type(VarType::STRING), stringValue(str), intValue(0), isReadonly(readonly) {}
-    explicit Variable(const std::vector<std::string>& arr, bool readonly = false)
-        : type(VarType::ARRAY), arrayValue(arr), intValue(0), isReadonly(readonly) {}
-    explicit Variable(int i, bool readonly = false)
-        : type(VarType::INTEGER), intValue(i), isReadonly(readonly) {}
-
-    std::string toString() const {
-        switch (type) {
-            case VarType::STRING: return stringValue;
-            case VarType::INTEGER: return std::to_string(intValue);
-            case VarType::ARRAY: return arrayValue.empty() ? "" : arrayValue[0];
-            default: return "";
-        }
-    }
-};
+#include "utils/variables.h"
 
 // 全局变量用于信号处理
 static bool g_interrupted = false;
@@ -136,7 +104,7 @@ struct Job {
 
 class LeiziShell {
 private:
-    std::unordered_map<std::string, Variable> variables;
+    VariableManager variables;
     std::vector<std::string> commandHistory;
     std::string currentDirectory;
     std::string homeDirectory;
@@ -533,66 +501,24 @@ private:
 
     // 变量展开
     std::string expandVariables(const std::string& str) const {
-        std::string result = str;
-        size_t pos = 0;
-
-        while ((pos = result.find('$', pos)) != std::string::npos) {
-            if (pos + 1 >= result.length()) break;
-
-            size_t start = pos + 1;
-            size_t end = start;
-
-            // 支持 ${var} 和 $var 语法
-            bool braced = (start < result.length() && result[start] == '{');
-            if (braced) {
-                start++;
-                end = result.find('}', start);
-                if (end == std::string::npos) {
-                    pos++;
-                    continue;
-                }
-            } else {
-                while (end < result.length() &&
-                       (std::isalnum(result[end]) || result[end] == '_')) {
-                    end++;
-                }
+        return variables.expand(str, [&](const std::string& varName) -> std::optional<std::string> {
+            if (varName == "?") {
+                return std::to_string(lastExitCode);
             }
-
-            if (end > start) {
-                std::string varName = result.substr(start, end - start);
-                std::string value;
-
-                // 特殊变量
-                if (varName == "?") {
-                    value = std::to_string(lastExitCode);
-                } else if (varName == "$") {
-                    value = std::to_string(getpid());
-                } else if (varName == "PWD") {
-                    value = currentDirectory;
-                } else if (varName == "HOME") {
-                    value = homeDirectory;
-                } else {
-                    // 用户定义的变量
-                    auto it = variables.find(varName);
-                    if (it != variables.end()) {
-                        value = it->second.toString();
-                    } else {
-                        // 环境变量
-                        const char* env = getenv(varName.c_str());
-                        if (env) value = env;
-                    }
-                }
-
-                size_t replaceStart = pos;
-                size_t replaceEnd = braced ? end + 1 : end;
-                result.replace(replaceStart, replaceEnd - replaceStart, value);
-                pos = replaceStart + value.length();
-            } else {
-                pos++;
+            if (varName == "$") {
+                return std::to_string(getpid());
             }
-        }
-
-        return result;
+            if (varName == "PWD") {
+                return currentDirectory;
+            }
+            if (varName == "HOME") {
+                return homeDirectory;
+            }
+            if (const char* env = getenv(varName.c_str())) {
+                return std::string(env);
+            }
+            return std::nullopt;
+        });
     }
 
     // ==================== 作业控制相关方法 ====================
@@ -830,7 +756,7 @@ private:
                 char* cwd = getcwd(nullptr, 0);
                 if (cwd) {
                     currentDirectory = cwd;
-                    variables["PWD"] = Variable(currentDirectory);
+                    variables.setString("PWD", currentDirectory);
                     free(cwd);
                 }
                 lastExitCode = 0;
@@ -876,13 +802,12 @@ private:
                         std::string name = assignment.substr(0, eq);
                         std::string value = expandVariables(assignment.substr(eq + 1));
 
-                        variables[name] = Variable(value);
+                        variables.setString(name, value);
                         setenv(name.c_str(), value.c_str(), 1);
                     } else {
                         // 导出已存在的变量
-                        auto it = variables.find(assignment);
-                        if (it != variables.end()) {
-                            setenv(assignment.c_str(), it->second.toString().c_str(), 1);
+                        if (const auto* existing = variables.get(assignment)) {
+                            setenv(assignment.c_str(), existing->toString().c_str(), 1);
                         }
                     }
                 }
@@ -919,7 +844,7 @@ private:
                         val = expandVariables(val);
                     }
 
-                    variables[name] = Variable(arrayValues);
+                    variables.setArray(name, arrayValues);
                     lastExitCode = 0;
 
                     std::cout << "Array " << Color::CYAN << name << Color::RESET
@@ -931,12 +856,11 @@ private:
                 }
             } else {
                 // 显示数组内容
-                auto it = variables.find(args[1]);
-                if (it != variables.end() && it->second.type == VarType::ARRAY) {
+                if (const auto* var = variables.get(args[1]); var && var->type == VarType::ARRAY) {
                     std::cout << Color::CYAN << args[1] << Color::RESET << "=(";
-                    for (size_t i = 0; i < it->second.arrayValue.size(); ++i) {
+                    for (size_t i = 0; i < var->arrayValue.size(); ++i) {
                         if (i > 0) std::cout << " ";
-                        std::cout << "\"" << Color::GREEN << it->second.arrayValue[i]
+                        std::cout << "\"" << Color::GREEN << var->arrayValue[i]
                                   << Color::RESET << "\"";
                     }
                     std::cout << ")" << std::endl;
@@ -1500,10 +1424,10 @@ public:
         }
 
         // 设置默认变量
-        variables["PWD"] = Variable(currentDirectory, true);
-        variables["HOME"] = Variable(homeDirectory, true);
-        variables["SHELL"] = Variable("/usr/local/bin/leizi", true);
-        variables["LEIZI_VERSION"] = Variable(LEIZI_VERSION_STRING, true);
+        variables.setString("PWD", currentDirectory, true);
+        variables.setString("HOME", homeDirectory, true);
+        variables.setString("SHELL", "/usr/local/bin/leizi", true);
+        variables.setString("LEIZI_VERSION", LEIZI_VERSION_STRING, true);
 
         // 加载历史记录
         loadHistory();
