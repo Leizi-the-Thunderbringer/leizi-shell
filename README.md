@@ -26,7 +26,7 @@ A modern POSIX-compatible shell with ZSH-style arrays and beautiful Powerlevel10
 
 ```bash
 # Clone the repository
-git clone https://github.com/Zixiao-Tech/leizi-shell.git
+git clone https://github.com/Zixiao-System/leizi-shell.git
 cd leizi-shell
 
 # Create build directory
@@ -43,7 +43,7 @@ sudo make install
 ### Quick Install Script
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/Zixiao-Tech/leizi-shell/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/Zixiao-System/leizi-shell/main/install.sh | bash
 ```
 
 ## 🚀 Usage
@@ -205,7 +205,7 @@ GNU GENERAL PUBLIC LICENSE - see [LICENSE](LICENSE) file for details.
 
 ## 🐛 Bug Reports
 
-Found a bug? Please [open an issue](https://github.com/Zixiao-Tech/leizi-shell/issues) with:
+Found a bug? Please [open an issue](https://github.com/Zixiao-System/leizi-shell/issues) with:
 
 - Your OS and version
 - Leizi Shell version (`leizi --version`)
@@ -214,12 +214,12 @@ Found a bug? Please [open an issue](https://github.com/Zixiao-Tech/leizi-shell/i
 
 ## 📊 Statistics
 
-![GitHub stars](https://img.shields.io/github/stars/Zixiao-Tech/leizi-shell?style=social)
-![GitHub forks](https://img.shields.io/github/forks/Zixiao-Tech/leizi-shell?style=social)
-![GitHub issues](https://img.shields.io/github/issues/Zixiao-Tech/leizi-shell)
-![GitHub license](https://img.shields.io/github/license/Zixiao-Tech/leizi-shell)
-![Build status](https://img.shields.io/github/workflow/status/Zixiao-Tech/leizi-shell/CI)
+![GitHub stars](https://img.shields.io/github/stars/Zixiao-System/leizi-shell?style=social)
+![GitHub forks](https://img.shields.io/github/forks/Zixiao-System/leizi-shell?style=social)
+![GitHub issues](https://img.shields.io/github/issues/Zixiao-System/leizi-shell)
+![GitHub license](https://img.shields.io/github/license/Zixiao-System/leizi-shell)
+![Build status](https://img.shields.io/github/workflow/status/Zixiao-System/leizi-shell/CI)
 
 ---
 
-**Made with ❤️ by the Zixiao Tech team**
+**Made with ❤️ by the Zixiao System team**

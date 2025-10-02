@@ -11,7 +11,7 @@
  *
  * Author: logos
  * License: MIT
- * Repository: https://github.com/Zixiao-Tech/leizi-shell
+ * Repository: https://github.com/Zixiao-System/leizi-shell
  */
 
 #include <iostream>
