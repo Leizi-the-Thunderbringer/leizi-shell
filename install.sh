@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Leizi Shell Installation Script
-# Usage: curl -sSL https://raw.githubusercontent.com/Leizi-the-Thunderbringer/leizi-shell/main/install.sh | bash
+# Usage: curl -sSL https://raw.githubusercontent.com/Zixiao-Tech/leizi-shell/main/install.sh | bash
 
 set -e
 
@@ -15,7 +15,7 @@ BOLD='\033[1m'
 NC='\033[0m' # No Color
 
 # Configuration
-REPO_URL="https://github.com/Leizi-the-Thunderbringer/leizi-shell"
+REPO_URL="https://github.com/Zixiao-Tech/leizi-shell"
 BINARY_NAME="leizi"
 INSTALL_DIR="/usr/local/bin"
 VERSION="latest"

@@ -430,8 +430,8 @@ docs/
 # Formula/leizi.rb
 class Leizi < Formula
   desc "Modern POSIX-compatible shell with ZSH-style arrays and beautiful prompts"
-  homepage "https://github.com/Leizi-the-Thunderbringer/leizi-shell"
-  url "https://github.com/Leizi-the-Thunderbringer/leizi-shell/archive/v1.0.1.tar.gz"
+  homepage "https://github.com/Zixiao-Tech/leizi-shell"
+  url "https://github.com/Zixiao-Tech/leizi-shell/archive/v1.0.1.tar.gz"
   sha256 "..."
   license "GPL-3.0"
   
@@ -473,7 +473,7 @@ Priority: optional
 Maintainer: Leizi Team <maintainer@example.com>
 Build-Depends: debhelper-compat (= 12), cmake, libreadline-dev
 Standards-Version: 4.5.0
-Homepage: https://github.com/Leizi-the-Thunderbringer/leizi-shell
+Homepage: https://github.com/Zixiao-Tech/leizi-shell
 
 Package: leizi-shell
 Architecture: any
@@ -501,11 +501,11 @@ pkgver=1.0.1
 pkgrel=1
 pkgdesc="Modern POSIX-compatible shell with ZSH-style arrays and beautiful prompts"
 arch=('x86_64')
-url="https://github.com/Leizi-the-Thunderbringer/leizi-shell"
+url="https://github.com/Zixiao-Tech/leizi-shell"
 license=('GPL3')
 depends=('readline')
 makedepends=('cmake' 'git')
-source=("$pkgname-$pkgver.tar.gz::https://github.com/Leizi-the-Thunderbringer/leizi-shell/archive/v$pkgver.tar.gz")
+source=("$pkgname-$pkgver.tar.gz::https://github.com/Zixiao-Tech/leizi-shell/archive/v$pkgver.tar.gz")
 sha256sums=('SKIP')
 
 build() {
@@ -770,5 +770,5 @@ jobs:
 ---
 
 **最后更新**: 2025年9月17日
-**维护者**: Leizi-the-Thunderbringer Team
+**维护者**: Zixiao Tech Team
 **版本**: v1.0 (待办清单)

@@ -26,7 +26,7 @@ A modern POSIX-compatible shell with ZSH-style arrays and beautiful Powerlevel10
 
 ```bash
 # Clone the repository
-git clone https://github.com/Leizi-the-Thunderbringer/leizi-shell.git
+git clone https://github.com/Zixiao-Tech/leizi-shell.git
 cd leizi-shell
 
 # Create build directory
@@ -43,7 +43,7 @@ sudo make install
 ### Quick Install Script
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/Leizi-the-Thunderbringer/leizi-shell/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/Zixiao-Tech/leizi-shell/main/install.sh | bash
 ```
 
 ## 🚀 Usage
@@ -162,7 +162,7 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ```bash
 # Clone with submodules
-git clone --recursive https://github.com/Leizi-the-Thunderbringer/leizi-shell.git
+git clone --recursive https://github.com/Zixiao-Tech/leizi-shell.git
 
 # Set up development environment
 cd leizi-shell
@@ -205,7 +205,7 @@ GNU GENERAL PUBLIC LICENSE - see [LICENSE](LICENSE) file for details.
 
 ## 🐛 Bug Reports
 
-Found a bug? Please [open an issue](https://github.com/your-username/leizi-shell/issues) with:
+Found a bug? Please [open an issue](https://github.com/Zixiao-Tech/leizi-shell/issues) with:
 
 - Your OS and version
 - Leizi Shell version (`leizi --version`)
@@ -214,12 +214,12 @@ Found a bug? Please [open an issue](https://github.com/your-username/leizi-shell
 
 ## 📊 Statistics
 
-![GitHub stars](https://img.shields.io/github/stars/Leizi-the-Thunderbringer/leizi-shell?style=social)
-![GitHub forks](https://img.shields.io/github/forks/Leizi-the-Thunderbringer/leizi-shell?style=social)
-![GitHub issues](https://img.shields.io/github/issues/Leizi-the-Thunderbringer/leizi-shell)
-![GitHub license](https://img.shields.io/github/license/Leizi-the-Thunderbringer/leizi-shell)
-![Build status](https://img.shields.io/github/workflow/status/Leizi-the-Thunderbringer/leizi-shell/CI)
+![GitHub stars](https://img.shields.io/github/stars/Zixiao-Tech/leizi-shell?style=social)
+![GitHub forks](https://img.shields.io/github/forks/Zixiao-Tech/leizi-shell?style=social)
+![GitHub issues](https://img.shields.io/github/issues/Zixiao-Tech/leizi-shell)
+![GitHub license](https://img.shields.io/github/license/Zixiao-Tech/leizi-shell)
+![Build status](https://img.shields.io/github/workflow/status/Zixiao-Tech/leizi-shell/CI)
 
 ---
 
-**Made with ❤️ by the Leizi-the-Thunderbringer team**
+**Made with ❤️ by the Zixiao Tech team**

@@ -8,7 +8,7 @@ Thank you for your interest in contributing to Leizi Shell! We welcome contribut
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/Leizi-the-Thunderbringer/leizi-shell.git
+   git clone https://github.com/Zixiao-Tech/leizi-shell.git
    cd leizi-shell
    ```
 
