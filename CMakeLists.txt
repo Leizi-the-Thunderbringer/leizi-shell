@@ -56,8 +56,11 @@ endif()
 add_executable(leizi
         src/main.cpp
         src/utils/variables.cpp
+        src/utils/signal_handler.cpp
         src/prompt/prompt.cpp
+        src/prompt/git.cpp
         src/core/parser.cpp
+        src/core/job_control.cpp
 )
 
 target_include_directories(leizi
