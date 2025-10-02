@@ -67,11 +67,14 @@ src/
 - **具体任务**:
   - [x] 创建 `src/utils/colors.h` - 将 Color 命名空间提取（2025-10-01 完成）
   - [x] 创建 `src/utils/variables.h/.cpp` - 实现改进的变量系统（引入 VariableManager，2025-10-01 完成初版）
-  - [x] 创建 `src/prompt/prompt.h/.cpp` - 提取提示符生成逻辑
-  - [ ] 创建 `src/prompt/git.h/.cpp` - 提取 Git 集成功能
-  - [x] 创建 `src/core/parser.h/.cpp` - 提取命令解析逻辑
+  - [x] 创建 `src/prompt/prompt.h/.cpp` - 提取提示符生成逻辑（2025-10-01 完成）
+  - [x] 创建 `src/prompt/git.h/.cpp` - 提取 Git 集成功能（2025-10-02 完成）
+  - [x] 创建 `src/core/parser.h/.cpp` - 提取命令解析逻辑（2025-10-01 完成）
+  - [x] 创建 `src/core/job_control.h/.cpp` - 提取作业控制逻辑（2025-10-02 完成）
+  - [x] 创建 `src/utils/signal_handler.h/.cpp` - 提取信号处理逻辑（2025-10-02 完成）
+  - [x] 创建 `src/builtin/builtin.h` - 内建命令基类框架（2025-10-02 完成）
   - [ ] 创建 `src/builtin/` 目录下的各个命令实现
-  - [x] 更新 `CMakeLists.txt` 支持多文件编译（添加 utils 源文件，2025-10-01）
+  - [x] 更新 `CMakeLists.txt` 支持多文件编译（持续更新中）
   - [ ] 确保所有模块都有适当的头文件保护和命名空间
 
 - **预期工作量**: 2-3 天

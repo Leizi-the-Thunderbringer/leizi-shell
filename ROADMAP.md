@@ -53,6 +53,12 @@
   ```
   - [x] 颜色常量抽离至 `src/utils/colors.h`（2025-10-01）
   - [x] 引入 `VariableManager`（`src/utils/variables.*`）统一变量管理（2025-10-01）
+  - [x] 创建 `src/prompt/prompt.h/.cpp` - 提取提示符生成逻辑（2025-10-01）
+  - [x] 创建 `src/core/parser.h/.cpp` - 提取命令解析逻辑（2025-10-01）
+  - [x] 创建 `src/prompt/git.h/.cpp` - 提取 Git 集成功能（2025-10-02）✨
+  - [x] 创建 `src/core/job_control.h/.cpp` - 作业控制模块（2025-10-02）✨
+  - [x] 创建 `src/utils/signal_handler.h/.cpp` - 信号处理模块（2025-10-02）✨
+  - [x] 创建 `src/builtin/builtin.h` - 内建命令基类框架（2025-10-02）✨
 
 - **TASK-011: 完善测试套件** ⭐ `HIGH`
   - 建立单元测试框架 (Catch2/Google Test)
