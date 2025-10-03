@@ -68,6 +68,7 @@
 #include "builtin/builtin_manager.h"
 #include "completion/completer.h"
 #include "config/config.h"
+#include "syntax/highlighter.h"
 
 using namespace leizi;
 
@@ -117,6 +118,7 @@ private:
     BuiltinManager builtinManager;  // 内建命令管理器
     std::unique_ptr<SmartCompleter> completer;  // 智能补全器
     ConfigManager configManager;    // 配置管理器
+    std::unique_ptr<SyntaxHighlighter> highlighter;  // 语法高亮器
     std::vector<std::string> commandHistory;
     std::string currentDirectory;
     std::string homeDirectory;
@@ -929,6 +931,9 @@ public:
         completer->addProvider(std::make_unique<VariableCompleter>(variables));
         completer->addProvider(std::make_unique<HistoryCompleter>(commandHistory));
         completer->addProvider(std::make_unique<FileCompleter>());
+
+        // 初始化语法高亮器
+        highlighter = std::make_unique<SyntaxHighlighter>(builtins);
 
         #if HAVE_READLINE
         // 初始化readline

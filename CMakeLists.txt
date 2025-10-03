@@ -93,9 +93,11 @@ add_executable(leizi
         src/builtin/history.cpp
         src/builtin/simple.cpp
         src/builtin/info.cpp
+        src/builtin/highlight.cpp
         src/builtin/builtin_manager.cpp
         src/completion/completer.cpp
         src/config/config.cpp
+        src/syntax/highlighter.cpp
 )
 
 target_include_directories(leizi

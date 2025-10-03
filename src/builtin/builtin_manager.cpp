@@ -14,6 +14,7 @@ extern "C" {
     BuiltinCommand* createClearCommand();
     BuiltinCommand* createHelpCommand();
     BuiltinCommand* createVersionCommand();
+    BuiltinCommand* createHighlightCommand();
 }
 
 BuiltinManager::BuiltinManager() {
@@ -29,6 +30,7 @@ BuiltinManager::BuiltinManager() {
     registerCommand(createClearCommand());
     registerCommand(createHelpCommand());
     registerCommand(createVersionCommand());
+    registerCommand(createHighlightCommand());
 }
 
 void BuiltinManager::registerCommand(BuiltinCommand* command) {

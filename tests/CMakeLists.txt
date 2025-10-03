@@ -19,6 +19,8 @@ add_executable(unit_tests
     ../src/builtin/history.cpp
     ../src/builtin/simple.cpp
     ../src/builtin/info.cpp
+    ../src/builtin/highlight.cpp
+    ../src/syntax/highlighter.cpp
 )
 
 target_include_directories(unit_tests PRIVATE
