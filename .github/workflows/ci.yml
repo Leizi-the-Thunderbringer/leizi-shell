@@ -74,9 +74,7 @@ jobs:
         run: ${{ matrix.install_deps }}
 
       - name: Configure CMake
-        run: |
-          mkdir -p ${{github.workspace}}/install
-          cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install
 
       - name: Build
         run: cmake --build ${{github.workspace}}/build --config Release --parallel
