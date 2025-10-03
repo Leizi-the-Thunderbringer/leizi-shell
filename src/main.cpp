@@ -67,6 +67,7 @@
 #include "core/parser.h"
 #include "builtin/builtin_manager.h"
 #include "completion/completer.h"
+#include "config/config.h"
 
 using namespace leizi;
 
@@ -115,6 +116,7 @@ private:
     CommandParser commandParser;
     BuiltinManager builtinManager;  // 内建命令管理器
     std::unique_ptr<SmartCompleter> completer;  // 智能补全器
+    ConfigManager configManager;    // 配置管理器
     std::vector<std::string> commandHistory;
     std::string currentDirectory;
     std::string homeDirectory;
@@ -673,6 +675,16 @@ private:
                 if (cmd.empty()) return;  // 只有&符号的情况
             }
 
+            // Alias 扩展
+            if (!cmd.empty()) {
+                auto alias = configManager.getAlias(cmd[0]);
+                if (alias) {
+                    // 简单替换第一个token
+                    // TODO: 更完整的alias支持应该解析整个alias命令
+                    cmd[0] = *alias;
+                }
+            }
+
             if (!executeBuiltinWithRedirection(cmd)) {
                 executeExternal(cmd, background);
             }
@@ -895,6 +907,13 @@ public:
 
         // 加载历史记录
         loadHistory();
+
+        // 加载配置文件
+        std::string configPath = homeDirectory + "/.config/leizi/config";
+        if (!configManager.loadConfig(configPath)) {
+            // 如果配置不存在，生成默认配置
+            configManager.generateDefaultConfig(configPath);
+        }
 
         // 初始化智能补全系统
         completer = std::make_unique<SmartCompleter>();

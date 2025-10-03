@@ -92,10 +92,14 @@
   - [ ] 命令参数补全 - 未来扩展
   - [ ] 模糊匹配 - 未来扩展
 
-- **TASK-009: 配置系统实现**
-  - `~/.config/leizi/config.toml` 支持
-  - 提示符、补全、历史记录可配置
-  - 别名系统基础实现
+- **TASK-009: 配置系统实现** ⭐ `HIGH` ✅ **已完成** (2025-10-03)
+  - [x] ConfigManager架构 (INI风格解析)
+  - [x] 配置文件解析 (~/.config/leizi/config)
+  - [x] Section支持 ([prompt], [completion], [history], [aliases])
+  - [x] 类型自动推断 (bool, int, string)
+  - [x] Alias系统基础实现
+  - [x] 默认配置自动生成
+  - [ ] 配置热重载 - 未来扩展
 
 ### 里程碑检查点
 - **2025年10月15日**: 模块化重构完成

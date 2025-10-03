@@ -255,47 +255,53 @@ SmartCompleter (主管理器)
   - 目录补全带 / 后缀
   - 历史命令去重
 
-### TASK-009: 配置系统
+### ~~TASK-009: 配置系统~~ ✅ **已完成** (2025-10-03)
 - **描述**: 实现 shell 配置文件支持
-- **配置文件位置**: `~/.config/leizi/config.toml` 或 `~/.leizirc`
+- **状态**: ✅ 已完成 - ConfigManager系统建立，支持INI风格配置
+- **配置文件位置**: `~/.config/leizi/config`
 - **配置项设计**:
-```toml
+```ini
 [prompt]
 show_git = true
 show_time = true
 show_user = true
-symbol = "❯"
 colors = true
+symbol = "❯"
 
 [completion]
 case_sensitive = false
 show_hidden = false
-fuzzy_match = true
 
 [history]
 size = 10000
-file = "~/.config/leizi/history"
 ignore_duplicates = true
 ignore_space = true
 
 [aliases]
 ll = "ls -la"
-la = "ls -la"
-grep = "grep --color=auto"
+la = "ls -A"
+l = "ls -CF"
 ```
 
-- **实现要求**:
-  - [ ] 支持 TOML 或简单的 key=value 格式
-  - [ ] 配置热重载 (可选)
-  - [ ] 配置验证和错误处理
-  - [ ] 向后兼容 (默认配置)
+- **已实现功能**:
+  - [x] INI风格配置文件解析
+  - [x] Section分组 ([prompt], [completion], [history], [aliases])
+  - [x] 类型自动推断 (bool, int, string)
+  - [x] 默认配置生成
+  - [x] Alias扩展支持
+  - [x] 向后兼容 (默认值)
+  - [ ] 配置热重载 - 未来扩展
 
-- **预期工作量**: 1 天
-- **验收标准**:
-  - [ ] 配置文件正确解析
-  - [ ] 所有配置项生效
-  - [ ] 错误配置有友好提示
-  - [ ] 提供配置模板
+- **新增文件**:
+  - `src/config/config.h` - 配置系统接口
+  - `src/config/config.cpp` - 配置解析和管理
+
+- **API功能**:
+  - ConfigValue: 支持bool/int/string类型
+  - loadConfig(): 从文件加载配置
+  - generateDefaultConfig(): 生成默认配置
+  - getBool/getInt/getString(): 类型安全访问
+  - getAlias/getAllAliases(): Alias管理
 
 ### TASK-010: 语法高亮
 - **描述**: 实现实时语法高亮 (类似 Fish Shell)

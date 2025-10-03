@@ -218,7 +218,7 @@ Found a bug? Please [open an issue](https://github.com/Zixiao-System/leizi-shell
 ![GitHub forks](https://img.shields.io/github/forks/Zixiao-System/leizi-shell?style=social)
 ![GitHub issues](https://img.shields.io/github/issues/Zixiao-System/leizi-shell)
 ![GitHub license](https://img.shields.io/github/license/Zixiao-System/leizi-shell)
-![Build status](https://img.shields.io/github/workflow/status/Zixiao-System/leizi-shell/CI)
+[![CI](https://github.com/Zixiao-System/leizi-shell/actions/workflows/ci.yml/badge.svg)](https://github.com/Zixiao-System/leizi-shell/actions/workflows/ci.yml)
 
 ---
 
