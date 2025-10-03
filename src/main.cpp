@@ -65,6 +65,7 @@
 #include "utils/variables.h"
 #include "prompt/prompt.h"
 #include "core/parser.h"
+#include "builtin/builtin_manager.h"
 
 // 全局变量用于信号处理
 static bool g_interrupted = false;
@@ -109,6 +110,7 @@ private:
     VariableManager variables;
     PromptGenerator promptGenerator;
     CommandParser commandParser;
+    BuiltinManager builtinManager;  // 内建命令管理器
     std::vector<std::string> commandHistory;
     std::string currentDirectory;
     std::string homeDirectory;
@@ -183,10 +185,12 @@ private:
 
         if (isFirstToken) {
             // 补全命令
-            std::vector<std::string> builtins = {
-                "cd", "pwd", "exit", "echo", "export", "unset", "history",
-                "array", "help", "version", "clear", "jobs", "fg", "bg"
-            };
+            // 从 BuiltinManager 获取内建命令列表
+            std::vector<std::string> builtins = builtinManager.getCommandNames();
+            // 添加作业控制命令
+            builtins.push_back("jobs");
+            builtins.push_back("fg");
+            builtins.push_back("bg");
 
             for (const auto& builtin : builtins) {
                 if (lastToken.empty() || builtin.find(lastToken) == 0) {
@@ -451,11 +455,31 @@ private:
 
     // ==================== 内建命令处理 ====================
 
+    // 创建内建命令执行上下文
+    BuiltinContext createBuiltinContext() {
+        return BuiltinContext(
+            variables,
+            commandParser,
+            commandHistory,
+            currentDirectory,
+            homeDirectory,
+            lastExitCode,
+            exitRequested,
+            historyFile,
+            [this](const std::string& str) { return expandVariables(str); }
+        );
+    }
+
     // 执行内建命令（支持重定向的版本）
     bool executeBuiltinWithRedirection(std::vector<std::string> args) {
         if (args.empty()) return false;
 
         const std::string& cmd = args[0];
+
+        // 检查是否为内建命令
+        if (!builtinManager.isBuiltin(cmd)) {
+            return false;
+        }
 
         // 这些命令必须在当前进程中执行
         if (cmd == "cd" || cmd == "export" || cmd == "unset" || cmd == "array" || cmd == "exit") {
@@ -463,38 +487,34 @@ private:
         }
 
         // 其他内建命令可以在子进程中执行以支持重定向
-        if (cmd == "echo" || cmd == "pwd" || cmd == "env" || cmd == "help" || cmd == "version" || cmd == "history") {
-            // 解析重定向
-            Redirection redir = parseRedirection(args);
+        // 解析重定向
+        Redirection redir = parseRedirection(args);
 
-            // 如果有重定向，在子进程中执行
-            if (redir.type != Redirection::NONE) {
-                pid_t pid = fork();
-                if (pid == 0) {
-                    // 子进程
-                    signal(SIGINT, SIG_DFL);
-                    applyRedirection(redir);
-                    executeBuiltin(args);
-                    exit(lastExitCode);
-                } else if (pid > 0) {
-                    // 父进程
-                    int status;
-                    waitpid(pid, &status, 0);
-                    if (WIFEXITED(status)) {
-                        lastExitCode = WEXITSTATUS(status);
-                    }
-                } else {
-                    perror("fork");
-                    lastExitCode = 1;
+        // 如果有重定向，在子进程中执行
+        if (redir.type != Redirection::NONE) {
+            pid_t pid = fork();
+            if (pid == 0) {
+                // 子进程
+                signal(SIGINT, SIG_DFL);
+                applyRedirection(redir);
+                executeBuiltin(args);
+                exit(lastExitCode);
+            } else if (pid > 0) {
+                // 父进程
+                int status;
+                waitpid(pid, &status, 0);
+                if (WIFEXITED(status)) {
+                    lastExitCode = WEXITSTATUS(status);
                 }
-                return true;
             } else {
-                // 没有重定向，直接执行
-                return executeBuiltin(args);
+                perror("fork");
+                lastExitCode = 1;
             }
+            return true;
+        } else {
+            // 没有重定向，直接执行
+            return executeBuiltin(args);
         }
-
-        return false;
     }
 
     // 执行内建命令
@@ -503,171 +523,8 @@ private:
 
         const std::string& cmd = args[0];
 
-        if (cmd == "exit") {
-            int code = 0;
-            if (args.size() > 1) {
-                try {
-                    code = std::stoi(args[1]);
-                } catch (...) {
-                    code = 255;
-                }
-            }
-            exitRequested = true;
-            lastExitCode = code;
-            return true;
-        } else if (cmd == "cd") {
-            std::string path;
-            if (args.size() > 1) {
-                path = expandVariables(args[1]);
-            } else {
-                path = homeDirectory;
-            }
-
-            if (chdir(path.c_str()) == 0) {
-                char* cwd = getcwd(nullptr, 0);
-                if (cwd) {
-                    currentDirectory = cwd;
-                    variables.setString("PWD", currentDirectory);
-                    free(cwd);
-                }
-                lastExitCode = 0;
-            } else {
-                perror("leizi");
-                lastExitCode = 1;
-            }
-            return true;
-        } else if (cmd == "pwd") {
-            std::cout << currentDirectory << std::endl;
-            lastExitCode = 0;
-            return true;
-        } else if (cmd == "echo") {
-            bool newline = true;
-            size_t start = 1;
-
-            // 处理 -n 选项
-            if (args.size() > 1 && args[1] == "-n") {
-                newline = false;
-                start = 2;
-            }
-
-            for (size_t i = start; i < args.size(); ++i) {
-                if (i > start) std::cout << " ";
-                std::cout << expandVariables(args[i]);
-            }
-            if (newline) std::cout << std::endl;
-            lastExitCode = 0;
-            return true;
-        } else if (cmd == "export") {
-            if (args.size() < 2) {
-                // 显示所有导出的变量
-                extern char **environ;
-                for (char **env = environ; *env != nullptr; env++) {
-                    std::cout << "export " << *env << std::endl;
-                }
-                lastExitCode = 0;
-            } else {
-                for (size_t i = 1; i < args.size(); ++i) {
-                    std::string assignment = args[i];
-                    size_t eq = assignment.find('=');
-                    if (eq != std::string::npos) {
-                        std::string name = assignment.substr(0, eq);
-                        std::string value = expandVariables(assignment.substr(eq + 1));
-
-                        variables.setString(name, value);
-                        setenv(name.c_str(), value.c_str(), 1);
-                    } else {
-                        // 导出已存在的变量
-                        if (const auto* existing = variables.get(assignment)) {
-                            setenv(assignment.c_str(), existing->toString().c_str(), 1);
-                        }
-                    }
-                }
-                lastExitCode = 0;
-            }
-            return true;
-        } else if (cmd == "unset") {
-            for (size_t i = 1; i < args.size(); ++i) {
-                variables.erase(args[i]);
-                unsetenv(args[i].c_str());
-            }
-            lastExitCode = 0;
-            return true;
-        } else if (cmd == "array") {
-            if (args.size() < 2) {
-                std::cout << "Usage: array name=(val1 val2 ...) or array name" << std::endl;
-                lastExitCode = 1;
-                return true;
-            }
-
-            std::string assignment = args[1];
-            size_t eq = assignment.find('=');
-
-            if (eq != std::string::npos) {
-                // 创建数组
-                std::string name = assignment.substr(0, eq);
-                std::string values = assignment.substr(eq + 1);
-
-                if (values.front() == '(' && values.back() == ')') {
-                    values = values.substr(1, values.length() - 2);
-                    std::vector<std::string> arrayValues = commandParser.parseCommand(values);
-
-                    for (auto& val : arrayValues) {
-                        val = expandVariables(val);
-                    }
-
-                    variables.setArray(name, arrayValues);
-                    lastExitCode = 0;
-
-                    std::cout << "Array " << Color::CYAN << name << Color::RESET
-                              << " created with " << Color::YELLOW << arrayValues.size()
-                              << Color::RESET << " elements" << std::endl;
-                } else {
-                    std::cout << "Error: Array syntax should be name=(val1 val2 ...)" << std::endl;
-                    lastExitCode = 1;
-                }
-            } else {
-                // 显示数组内容
-                if (const auto* var = variables.get(args[1]); var && var->type == VarType::ARRAY) {
-                    std::cout << Color::CYAN << args[1] << Color::RESET << "=(";
-                    for (size_t i = 0; i < var->arrayValue.size(); ++i) {
-                        if (i > 0) std::cout << " ";
-                        std::cout << "\"" << Color::GREEN << var->arrayValue[i]
-                                  << Color::RESET << "\"";
-                    }
-                    std::cout << ")" << std::endl;
-                    lastExitCode = 0;
-                } else {
-                    std::cout << "Array " << Color::RED << args[1]
-                              << Color::RESET << " not found" << std::endl;
-                    lastExitCode = 1;
-                }
-            }
-            return true;
-        } else if (cmd == "history") {
-            size_t count = 20; // 默认显示最近20条
-            if (args.size() > 1) {
-                try {
-                    count = std::stoul(args[1]);
-                } catch (...) {
-                    count = 20;
-                }
-            }
-
-            size_t start = commandHistory.size() > count ?
-                          commandHistory.size() - count : 0;
-
-            for (size_t i = start; i < commandHistory.size(); ++i) {
-                std::cout << Color::DIM << std::setw(4) << (i + 1)
-                          << Color::RESET << " " << commandHistory[i] << std::endl;
-            }
-            lastExitCode = 0;
-            return true;
-        } else if (cmd == "clear") {
-            std::cout << "\033[2J\033[H";
-            lastExitCode = 0;
-            return true;
-        } else if (cmd == "jobs") {
-            // 显示作业列表
+        // 作业控制命令需要特殊处理（不使用新的模块化系统）
+        if (cmd == "jobs") {
             listJobs();
             lastExitCode = 0;
             return true;
@@ -741,71 +598,21 @@ private:
                 lastExitCode = 1;
             }
             return true;
-        } else if (cmd == "help") {
-            showHelp();
-            return true;
-        } else if (cmd == "version") {
-            showVersion();
+        }
+
+        // 使用模块化的内建命令系统
+        if (builtinManager.isBuiltin(cmd)) {
+            auto context = createBuiltinContext();
+            auto result = builtinManager.execute(args, context);
+
+            if (result.shouldExit) {
+                exitRequested = true;
+            }
+
             return true;
         }
 
         return false;
-    }
-
-    // 显示帮助信息
-    void showHelp() {
-        std::cout << Color::BOLD << Color::CYAN << "Leizi Shell " << LEIZI_VERSION_STRING
-                  << Color::RESET << " - A modern POSIX-compatible shell\n\n";
-
-        std::cout << Color::BOLD << "Built-in Commands:" << Color::RESET << "\n";
-        std::cout << "  " << Color::GREEN << "cd [dir]" << Color::RESET << "              Change directory\n";
-        std::cout << "  " << Color::GREEN << "pwd" << Color::RESET << "                  Print working directory\n";
-        std::cout << "  " << Color::GREEN << "echo [-n] text" << Color::RESET << "       Print text\n";
-        std::cout << "  " << Color::GREEN << "export var=value" << Color::RESET << "     Export environment variable\n";
-        std::cout << "  " << Color::GREEN << "unset var" << Color::RESET << "            Unset variable\n";
-        std::cout << "  " << Color::GREEN << "array name=(v1 v2)" << Color::RESET << "   Create/display ZSH-style array\n";
-        std::cout << "  " << Color::GREEN << "history [n]" << Color::RESET << "          Show command history\n";
-        std::cout << "  " << Color::GREEN << "jobs" << Color::RESET << "                 List background jobs\n";
-        std::cout << "  " << Color::GREEN << "fg [job]" << Color::RESET << "             Bring job to foreground\n";
-        std::cout << "  " << Color::GREEN << "bg [job]" << Color::RESET << "             Resume job in background\n";
-        std::cout << "  " << Color::GREEN << "clear" << Color::RESET << "                Clear screen\n";
-        std::cout << "  " << Color::GREEN << "help" << Color::RESET << "                 Show this help\n";
-        std::cout << "  " << Color::GREEN << "version" << Color::RESET << "              Show version info\n";
-        std::cout << "  " << Color::GREEN << "exit [code]" << Color::RESET << "          Exit shell\n\n";
-
-        std::cout << Color::BOLD << "Features:" << Color::RESET << "\n";
-        std::cout << "  • Beautiful Powerlevel10k-inspired prompts\n";
-        std::cout << "  • Git integration with branch and status display\n";
-        std::cout << "  • ZSH-style array support\n";
-        std::cout << "  • Smart tab completion\n";
-        std::cout << "  • POSIX compatibility\n";
-        std::cout << "  • Variable expansion ($var, ${var})\n";
-        std::cout << "  • Command history with persistent storage\n\n";
-
-        std::cout << Color::BOLD << "Variable Expansion:" << Color::RESET << "\n";
-        std::cout << "  $var or ${var}       Variable expansion\n";
-        std::cout << "  $?                   Last exit code\n";
-        std::cout << "  $                   Process ID\n";
-        std::cout << "  $PWD                 Current directory\n";
-        std::cout << "  $HOME                Home directory\n\n";
-
-        lastExitCode = 0;
-    }
-
-    // 显示版本信息
-    void showVersion() {
-        std::cout << Color::BOLD << Color::CYAN << "Leizi Shell " << LEIZI_VERSION_STRING
-                  << Color::RESET << "\n";
-        std::cout << "Built with C++20\n";
-        std::cout << "Features: POSIX compatibility, ZSH arrays, beautiful prompts\n";
-        #if HAVE_READLINE
-        std::cout << "Readline support: " << Color::GREEN << "enabled" << Color::RESET << "\n";
-        #else
-        std::cout << "Readline support: " << Color::YELLOW << "disabled" << Color::RESET << "\n";
-        #endif
-        std::cout << "Git integration: " << Color::GREEN << "enabled" << Color::RESET << "\n";
-        std::cout << "Repository: https://github.com/Leizi-the-Thunderbringer/leizi-shell\n";
-        lastExitCode = 0;
     }
 
     // I/O 重定向结构

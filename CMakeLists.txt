@@ -61,6 +61,14 @@ add_executable(leizi
         src/prompt/git.cpp
         src/core/parser.cpp
         src/core/job_control.cpp
+        src/builtin/cd.cpp
+        src/builtin/echo.cpp
+        src/builtin/export.cpp
+        src/builtin/array.cpp
+        src/builtin/history.cpp
+        src/builtin/simple.cpp
+        src/builtin/info.cpp
+        src/builtin/builtin_manager.cpp
 )
 
 target_include_directories(leizi

@@ -73,16 +73,27 @@ src/
   - [x] 创建 `src/core/job_control.h/.cpp` - 提取作业控制逻辑（2025-10-02 完成）
   - [x] 创建 `src/utils/signal_handler.h/.cpp` - 提取信号处理逻辑（2025-10-02 完成）
   - [x] 创建 `src/builtin/builtin.h` - 内建命令基类框架（2025-10-02 完成）
-  - [ ] 创建 `src/builtin/` 目录下的各个命令实现
-  - [x] 更新 `CMakeLists.txt` 支持多文件编译（持续更新中）
-  - [ ] 确保所有模块都有适当的头文件保护和命名空间
+  - [x] 创建 `src/builtin/` 目录下的各个命令实现（2025-10-03 完成）✨
+    - [x] `src/builtin/cd.cpp` - cd 命令
+    - [x] `src/builtin/echo.cpp` - echo 命令
+    - [x] `src/builtin/export.cpp` - export/unset 命令
+    - [x] `src/builtin/array.cpp` - array 命令
+    - [x] `src/builtin/history.cpp` - history 命令
+    - [x] `src/builtin/simple.cpp` - pwd/exit/clear 命令
+    - [x] `src/builtin/info.cpp` - help/version 命令
+    - [x] `src/builtin/builtin_manager.h/.cpp` - 内建命令管理器
+  - [x] 更新 `CMakeLists.txt` 支持多文件编译（2025-10-03 完成）
+  - [x] 更新 `main.cpp` 使用模块化内建命令系统（2025-10-03 完成）
+  - [x] 确保所有模块都有适当的头文件保护和命名空间
 
 - **预期工作量**: 2-3 天
 - **验收标准**:
-  - [ ] 编译通过，功能无回归
-  - [ ] 每个模块职责单一，接口清晰
+  - [x] 编译通过，功能无回归 ✅
+  - [x] 每个模块职责单一，接口清晰 ✅
   - [ ] 包含适当的单元测试
-  - [ ] 代码覆盖率不低于当前水平
+  - [x] 代码覆盖率不低于当前水平 ✅
+
+**最新进展** (2025-10-03): 完成了内建命令模块化重构！所有内建命令已成功提取到独立模块，实现了清晰的职责分离和统一的命令管理接口。
 
 ### TASK-004: 改进变量系统
 - **描述**: 使用现代 C++ 特性改进变量管理

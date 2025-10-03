@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include "builtin_context.h"
 
 /**
  * @brief 内建命令执行结果
@@ -25,9 +26,10 @@ public:
     /**
      * @brief 执行命令
      * @param args 命令参数列表（包含命令名本身）
+     * @param context 执行上下文
      * @return 执行结果
      */
-    virtual BuiltinResult execute(const std::vector<std::string>& args) = 0;
+    virtual BuiltinResult execute(const std::vector<std::string>& args, BuiltinContext& context) = 0;
 
     /**
      * @brief 获取命令名称
