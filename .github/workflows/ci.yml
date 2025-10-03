@@ -75,7 +75,7 @@ jobs:
 
       - name: Configure CMake
         run: |
-          mkdir -p ${{github.workspace}}/install
+          
           cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/install
 
       - name: Build
