@@ -81,8 +81,8 @@ jobs:
 
       - name: Install
         run: |
-          mkdir -p ${{github.workspace}}/install/bin
-          cmake --install ${{github.workspace}}/build
+          mkdir -p ${{github.workspace}}/install
+          cmake --install ${{github.workspace}}/build --prefix ${{github.workspace}}/install
 
       - name: Package
         run: |
