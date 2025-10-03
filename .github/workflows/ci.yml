@@ -80,7 +80,9 @@ jobs:
         run: cmake --build ${{github.workspace}}/build --config Release --parallel
 
       - name: Install
-        run: cmake --install ${{github.workspace}}/build
+        run: |
+          mkdir -p ${{github.workspace}}/install/bin
+          cmake --install ${{github.workspace}}/build
 
       - name: Package
         run: |
