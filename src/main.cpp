@@ -66,6 +66,9 @@
 #include "prompt/prompt.h"
 #include "core/parser.h"
 #include "builtin/builtin_manager.h"
+#include "completion/completer.h"
+
+using namespace leizi;
 
 // 全局变量用于信号处理
 static bool g_interrupted = false;
@@ -111,6 +114,7 @@ private:
     PromptGenerator promptGenerator;
     CommandParser commandParser;
     BuiltinManager builtinManager;  // 内建命令管理器
+    std::unique_ptr<SmartCompleter> completer;  // 智能补全器
     std::vector<std::string> commandHistory;
     std::string currentDirectory;
     std::string homeDirectory;
@@ -172,106 +176,12 @@ private:
         return promptGenerator.generate(context);
     }
 
-    // 自动补全功能
+    // 自动补全功能 (使用SmartCompleter)
     std::vector<std::string> getCompletions(const std::string& input) const {
-        std::vector<std::string> completions;
-
-        // 分析输入
-        auto tokens = commandParser.parseCommand(input);
-        if (tokens.empty()) return completions;
-
-        std::string lastToken = tokens.back();
-        bool isFirstToken = (tokens.size() == 1);
-
-        if (isFirstToken) {
-            // 补全命令
-            // 从 BuiltinManager 获取内建命令列表
-            std::vector<std::string> builtins = builtinManager.getCommandNames();
-            // 添加作业控制命令
-            builtins.push_back("jobs");
-            builtins.push_back("fg");
-            builtins.push_back("bg");
-
-            for (const auto& builtin : builtins) {
-                if (lastToken.empty() || builtin.find(lastToken) == 0) {
-                    completions.push_back(builtin);
-                }
-            }
-
-            // 补全PATH中的命令
-            const char* pathEnv = getenv("PATH");
-            if (pathEnv) {
-                std::string pathStr = pathEnv;
-                std::stringstream ss(pathStr);
-                std::string dir;
-
-                while (std::getline(ss, dir, ':')) {
-                    if (dir.empty()) continue;
-
-                    DIR* dirp = opendir(dir.c_str());
-                    if (dirp) {
-                        struct dirent* entry;
-                        while ((entry = readdir(dirp)) != nullptr) {
-                            std::string name = entry->d_name;
-                            if (name != "." && name != ".." &&
-                                (lastToken.empty() || name.find(lastToken) == 0)) {
-
-                                std::string fullPath = dir + "/" + name;
-                                struct stat st;
-                                if (stat(fullPath.c_str(), &st) == 0 &&
-                                    (st.st_mode & S_IXUSR)) {
-                                    completions.push_back(name);
-                                }
-                            }
-                        }
-                        closedir(dirp);
-                    }
-                }
-            }
+        if (!completer) {
+            return {};
         }
-
-        // 文件和目录补全
-        std::string dirPath = ".";
-        std::string prefix = lastToken;
-
-        size_t lastSlash = lastToken.find_last_of('/');
-        if (lastSlash != std::string::npos) {
-            dirPath = lastToken.substr(0, lastSlash);
-            prefix = lastToken.substr(lastSlash + 1);
-            if (dirPath.empty()) dirPath = "/";
-        }
-
-        DIR* dir = opendir(dirPath.c_str());
-        if (dir) {
-            struct dirent* entry;
-            while ((entry = readdir(dir)) != nullptr) {
-                std::string filename = entry->d_name;
-                if (filename != "." && filename != ".." &&
-                    (prefix.empty() || filename.find(prefix) == 0)) {
-
-                    std::string fullName = filename;
-                    if (dirPath != ".") {
-                        fullName = dirPath + "/" + filename;
-                    }
-
-                    // 检查是否为目录
-                    struct stat st;
-                    std::string checkPath = (dirPath == ".") ? filename : (dirPath + "/" + filename);
-                    if (stat(checkPath.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) {
-                        fullName += "/";
-                    }
-
-                    completions.push_back(fullName);
-                }
-            }
-            closedir(dir);
-        }
-
-        // 排序并去重
-        std::sort(completions.begin(), completions.end());
-        completions.erase(std::unique(completions.begin(), completions.end()), completions.end());
-
-        return completions;
+        return completer->getCompletions(input);
     }
 
     // 变量展开
@@ -985,6 +895,21 @@ public:
 
         // 加载历史记录
         loadHistory();
+
+        // 初始化智能补全系统
+        completer = std::make_unique<SmartCompleter>();
+
+        // 获取内建命令列表
+        std::vector<std::string> builtins = builtinManager.getCommandNames();
+        builtins.push_back("jobs");
+        builtins.push_back("fg");
+        builtins.push_back("bg");
+
+        // 添加各种补全提供者 (按优先级从高到低)
+        completer->addProvider(std::make_unique<CommandCompleter>(builtins));
+        completer->addProvider(std::make_unique<VariableCompleter>(variables));
+        completer->addProvider(std::make_unique<HistoryCompleter>(commandHistory));
+        completer->addProvider(std::make_unique<FileCompleter>());
 
         #if HAVE_READLINE
         // 初始化readline

@@ -69,6 +69,7 @@ add_executable(leizi
         src/builtin/simple.cpp
         src/builtin/info.cpp
         src/builtin/builtin_manager.cpp
+        src/completion/completer.cpp
 )
 
 target_include_directories(leizi
