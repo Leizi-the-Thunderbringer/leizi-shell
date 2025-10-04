@@ -1,0 +1,215 @@
+name: Package Release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.4.0)'
+        required: true
+
+jobs:
+  build-deb:
+    name: Build Debian Package
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y debhelper devscripts build-essential cmake libreadline-dev
+
+      - name: Copy debian packaging files
+        run: |
+          cp -r packaging/debian debian/
+
+      - name: Build DEB package
+        run: |
+          dpkg-buildpackage -us -uc -b
+
+      - name: Upload DEB package
+        uses: actions/upload-artifact@v4
+        with:
+          name: debian-package
+          path: ../*.deb
+
+      - name: Upload to release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ../*.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-docker:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        if: github.event_name == 'release'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Extract version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "release" ]; then
+            echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          else
+            echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: packaging/docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name == 'release' }}
+          tags: |
+            leizi/leizi-shell:latest
+            leizi/leizi-shell:${{ steps.version.outputs.VERSION }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  update-homebrew:
+    name: Update Homebrew Formula
+    runs-on: macos-latest
+    if: github.event_name == 'release'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version and calculate SHA256
+        id: metadata
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+          # Download the release tarball
+          curl -sL "https://github.com/Zixiao-System/leizi-shell/archive/v${VERSION}.tar.gz" -o release.tar.gz
+          SHA256=$(shasum -a 256 release.tar.gz | awk '{print $1}')
+          echo "SHA256=$SHA256" >> $GITHUB_OUTPUT
+
+      - name: Update Formula
+        run: |
+          # Update version and sha256 in Formula
+          sed -i '' "s/pkgver=.*/pkgver=${{ steps.metadata.outputs.VERSION }}/" packaging/homebrew/leizi.rb
+          sed -i '' "s/sha256 \".*/sha256 \"${{ steps.metadata.outputs.SHA256 }}\"/" packaging/homebrew/leizi.rb
+
+      - name: Create Pull Request to Homebrew tap
+        run: |
+          echo "Formula updated. Manual PR creation required to homebrew tap repository."
+          echo "Version: ${{ steps.metadata.outputs.VERSION }}"
+          echo "SHA256: ${{ steps.metadata.outputs.SHA256 }}"
+
+      - name: Upload updated Formula
+        uses: actions/upload-artifact@v4
+        with:
+          name: homebrew-formula
+          path: packaging/homebrew/leizi.rb
+
+  update-aur:
+    name: Update AUR Package
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Update PKGBUILD
+        run: |
+          sed -i "s/pkgver=.*/pkgver=${{ steps.version.outputs.VERSION }}/" packaging/arch/PKGBUILD
+          sed -i "s/pkgrel=.*/pkgrel=1/" packaging/arch/PKGBUILD
+
+      - name: Generate .SRCINFO
+        run: |
+          cd packaging/arch
+          # Install needed tools
+          sudo apt-get update && sudo apt-get install -y namcap
+
+          # Generate .SRCINFO (would need makepkg, skipping for now)
+          echo "PKGBUILD updated. .SRCINFO generation requires makepkg."
+
+      - name: Upload updated PKGBUILD
+        uses: actions/upload-artifact@v4
+        with:
+          name: aur-package
+          path: packaging/arch/PKGBUILD
+
+  create-release-notes:
+    name: Create Release Notes
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate Release Notes
+        run: |
+          cat > release-notes.md <<EOF
+          ## 📦 Installation
+
+          ### Homebrew (macOS)
+          \`\`\`bash
+          brew install leizi-shell
+          \`\`\`
+
+          ### Docker
+          \`\`\`bash
+          docker pull leizi/leizi-shell:${GITHUB_REF#refs/tags/v}
+          docker run -it leizi/leizi-shell
+          \`\`\`
+
+          ### Debian/Ubuntu
+          Download the .deb package from the assets below:
+          \`\`\`bash
+          sudo dpkg -i leizi-shell_${GITHUB_REF#refs/tags/v}_amd64.deb
+          \`\`\`
+
+          ### Arch Linux (AUR)
+          \`\`\`bash
+          yay -S leizi-shell
+          # or
+          paru -S leizi-shell
+          \`\`\`
+
+          ### Build from Source
+          \`\`\`bash
+          git clone https://github.com/Zixiao-System/leizi-shell.git
+          cd leizi-shell
+          mkdir build && cd build
+          cmake -DCMAKE_BUILD_TYPE=Release ..
+          make -j\$(nproc)
+          sudo make install
+          \`\`\`
+
+          ## 📝 Full Changelog
+          See below for detailed changes.
+          EOF
+
+      - name: Upload Release Notes
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-notes
+          path: release-notes.md

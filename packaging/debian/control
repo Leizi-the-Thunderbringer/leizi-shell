@@ -1,0 +1,24 @@
+Source: leizi-shell
+Section: shells
+Priority: optional
+Maintainer: Leizi Shell Team <noreply@github.com>
+Build-Depends: debhelper-compat (= 12), cmake (>= 3.16), libreadline-dev, g++ (>= 10)
+Standards-Version: 4.5.0
+Homepage: https://github.com/Zixiao-System/leizi-shell
+Vcs-Browser: https://github.com/Zixiao-System/leizi-shell
+Vcs-Git: https://github.com/Zixiao-System/leizi-shell.git
+
+Package: leizi-shell
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libreadline8
+Description: Modern POSIX-compatible shell with beautiful prompts
+ Leizi Shell is a modern shell implementation featuring:
+  * Beautiful Powerlevel10k-inspired prompts
+  * Git integration with real-time status
+  * ZSH-style array support
+  * Smart tab completion with multiple providers
+  * POSIX compatibility
+  * Syntax highlighting (Fish Shell style)
+  * Job control (background jobs, fg, bg)
+  * I/O redirection and pipes
+  * Configuration system with INI-style files
