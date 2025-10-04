@@ -16,11 +16,38 @@ A modern POSIX-compatible shell with ZSH-style arrays and beautiful Powerlevel10
 
 ## 🛠️ Installation
 
-### Prerequisites
+### Homebrew (macOS)
 
-- C++20 compatible compiler (GCC 10+, Clang 12+)
-- CMake 3.16+
-- Optional: libreadline for enhanced line editing
+```bash
+brew install Zixiao-System/leizi/leizi
+```
+
+### Docker
+
+```bash
+# Pull and run
+docker pull leizi/leizi-shell:latest
+docker run -it leizi/leizi-shell
+
+# With persistent config
+docker run -it -v ~/.config/leizi:/home/leizi/.config/leizi leizi/leizi-shell
+```
+
+### Debian/Ubuntu
+
+```bash
+# Download .deb package from releases
+wget https://github.com/Zixiao-System/leizi-shell/releases/latest/download/leizi-shell_1.4.0_amd64.deb
+sudo dpkg -i leizi-shell_1.4.0_amd64.deb
+```
+
+### Arch Linux (AUR)
+
+```bash
+yay -S leizi-shell
+# or
+paru -S leizi-shell
+```
 
 ### Build from Source
 
@@ -33,18 +60,18 @@ cd leizi-shell
 mkdir build && cd build
 
 # Configure and build
-cmake ..
+cmake -DCMAKE_BUILD_TYPE=Release ..
 make -j$(nproc)
 
 # Install (optional)
 sudo make install
 ```
 
-### Quick Install Script
+#### Prerequisites for Building
 
-```bash
-curl -sSL https://raw.githubusercontent.com/Zixiao-System/leizi-shell/main/install.sh | bash
-```
+- C++20 compatible compiler (GCC 10+, Clang 12+)
+- CMake 3.16+
+- Optional: libreadline for enhanced line editing
 
 ## 🚀 Usage
 
